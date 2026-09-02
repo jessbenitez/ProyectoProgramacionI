@@ -2,15 +2,16 @@
 ## Proyecto Integrador - Etapa 1: Sistema de Monitoreo de Humedad en Cultivos
 
 **Asignatura:** Programación I / Algoritmos y Estructuras I  
-**Nombre del grupo:** Error 404
+**Nombre del grupo:** Error 404  
 **Participantes:**
 - Nicole Quilmore
 - Jesica Benitez
 - Priscila Challa
 
-**Comisión:** 584514
+**Comisión:** 584514  
 **Cuatrimestre:** 2C 2026  
-**Etapa:** 1 - Prototipo Funcional en Memoria
+**Etapa:** 1 - Prototipo Funcional en Memoria  
+**Versión:** 2.0 (Reducida)
 
 ---
 
@@ -22,53 +23,43 @@ Los productores agrícolas necesitan un sistema que:
 - Registre mediciones de humedad en múltiples sectores del campo
 - Identifique rápidamente sectores en condiciones críticas
 - Proporcione indicadores de tendencias para tomar decisiones de riego
-(FLAG)
 - Permita consultar y analizar las mediciones registradas durante la semana actual
 
 ---
 
 ## 2. OBJETIVO GENERAL
 
-Desarrollar un **prototipo funcional en Python** que permita monitorear, analizar y reportar la humedad del suelo en diferentes sectores de un cultivo, demostrando la capacidad de integrar estructuras de datos, funciones modulares, validaciones y procesamiento de información. (Que buena scrum master 😉)
+Desarrollar un **prototipo funcional en Python** que permita monitorear, analizar y reportar la humedad del suelo en diferentes sectores de un cultivo, demostrando la capacidad de integrar estructuras de datos, funciones modulares, validaciones y procesamiento de información. 😉
 
 ---
 
 ## 3. ALCANCE FUNCIONAL MÍNIMO
 
-El sistema debe incluir, como mínimo, las siguientes capacidades:
+El sistema debe incluir las siguientes capacidades:
 
 ### 3.1 Gestión de Datos
 1. **Presentar información general** del dominio y los elementos que administra el sistema
-2. **Registrar datos** ingresados por el usuario (carga/actualización de mediciones)
-3. **Consultar y mostrar** datos cargados con formato claro (listados por sector)
+2. **Registrar datos** ingresados por el usuario (mediciones de humedad)
+3. **Consultar y mostrar** datos cargados por sector
 
-### 3.2 Análisis y Cálculos
-4. **Realizar al menos tres cálculos** o indicadores relevantes:
-   - Promedio de humedad por sector
-   - Promedio total de humedad
-   - Máximo y mínimo global
+### 3.2 Análisis y Cálculos (3+ Cálculos Requeridos)
+4. **Calcular indicadores de humedad:**
+   - Máximo global
+   - Mínimo global
+   - Promedio por sector
+   - Promedio total del campo
 
-5. **Buscar** un elemento por identificador (sector) o criterio definido
-(FLAG)
-### 3.3 Detección y Alertas
-6. **Detectar condiciones destacables:**
-   - Sectores con humedad crítica baja (<20%)
-   - Sectores con humedad crítica alta (>80%)
+5. **Buscar** un elemento por identificador (sector)
+
+### 3.3 Detección de Condiciones
+6. **Detectar y reportar:**
+   - Sectores con humedad crítica (<20% o >80%)
    - Sectores con humedad ideal (40-60%)
 
-### 3.4 Conteos
-7. **Contar y reportar:**
-   - Cantidad de sectores en estado crítico (bajo y alto)
-   - Cantidad de sectores en estado ideal
-   - Cantidad total de mediciones cargadas
+### 3.4 Reporte
+7. **Generar resumen general** del procesamiento con indicadores clave
 
-### 3.5 Reportes
-8. **Generar resumen general** del procesamiento con:
-   - Indicadores globales
-   - Ranking de sectores
-   - Estado de cada sector (crítico, ideal, normal)
-
-### 3.6 Interacción
+### 3.5 Interacción
 8. **Mantener un menú activo** hasta que el usuario seleccione salir, permitiendo acceso a todas las funcionalidades
 
 ---
@@ -82,186 +73,225 @@ La información se mantendrá **únicamente en memoria** durante la ejecución. 
 | Estructura | Uso | Ejemplo |
 |-----------|-----|---------|
 | **Matriz** | Datos de humedad: filas = sectores, columnas = días | `[[45, 52, 48, 61, ...], [78, 82, 79, 88, ...]]` |
-| **Lista** | Colección de valores o resultados de consultas | `[45, 52, 48, 61, ...]` |
-| **Tupla** | Datos fijos: nombres de sectores, límites críticos | `("Sector A", "Sector B", "Sector C")` |
-| **Cadena** | Identificadores, etiquetas, mensajes de usuario | `"Sector A"`, `"25.5%"` |
+| **Lista** | Resultados de búsquedas y filtrados | `[45, 52, 48, 61, ...]` |
+| **Tupla** | Datos fijos: nombres de sectores, días de semana | `("Sector A", "Sector B", "Sector C")` |
+| **Cadena** | Identificadores, etiquetas, mensajes | `"Sector A"`, `"25.5%"` |
 
 ### 4.2 Especificaciones de Datos
 
-- **Cantidad de sectores:** 5 (identificados como 0-4)
-(FLAG)
-- **Cantidad de mediciones:** 7 días (una semana completa)
-- **Período de análisis**: Semana laboral (Lunes a Domingo)
+- **Cantidad de sectores:** 5 (identificados para usuario como 1-5)
+- **Cantidad de mediciones:** 7 días (una semana completa: Lunes a Domingo)
+- **Período de análisis:** Una semana laboral
 - **Rango de valores:** 0 a 100 (porcentaje de humedad)
-- **Límite crítico por baja humedad:** (0-19)%
-- **Fuera del rango ideal:** (20-39)%
-- **Ideal:** (40-60)%
-- **Fuera del rango ideal:** (61-80)%
-- **Crítico por exceso de humedad:** (81-100)%
+- **Valor especial:** -1 (medición no cargada)
 
-(FLAG)
-### 4.2.1 Identificación de Sectores
+### 4.3 Identificación de Sectores
 
-El sistema utiliza:
-- ID visible para el usuario: 1 a 5
-- Etiqueta clara: Sector A, Sector B, Sector C, Sector D, Sector E
-- Índice interno en Python: 0-4 (para acceso a matriz)
+El sistema utiliza una representación clara para el usuario:
 
-Ejemplo:
-ID 1 → Sector A → Índice 0
-ID 2 → Sector B → Índice 1
-ID 3 → Sector C → Índice 2
-ID 4 → Sector D → Índice 3
-ID 5 → Sector E → Índice 4
+| ID Visible | Nombre | Índice Interno |
+|-----------|--------|-----------------|
+| 1 | Sector A | 0 |
+| 2 | Sector B | 1 |
+| 3 | Sector C | 2 |
+| 4 | Sector D | 3 |
+| 5 | Sector E | 4 |
 
-El usuario nunca ve los índices 0-4. Todos los mensajes mostrarán ID 1-5 y nombres descriptivos.
+**Nota:** El usuario ve IDs 1-5 y nombres descriptivos. Los índices 0-4 son internos de Python.
 
-### 4.2.2 Comportamiento de Actualización
-El sistema informa: "Ya existe una medición para Sector A el Lunes"
+### 4.4 Clasificación de Estados de Humedad
 
-### 4.2.3 Valores Especiales
-La matriz se debe inicializar con valores -1 ya que el valor 0% es un valor posible entre los ingresados.
+| Rango | Estado | Descripción |
+|-------|--------|-------------|
+| 0-19% | 🔴 Crítico Bajo | Riego urgente requerido |
+| 20-39% | 🟡 Baja | Por debajo del ideal |
+| 40-60% | 🟢 Ideal | Condiciones óptimas |
+| 61-80% | 🟡 Alta | Por encima del ideal |
+| 81-100% | 🔴 Crítico Alto | Drenaje urgente requerido |
+
+### 4.5 Representación de Medición No Cargada
+
+- **-1:** Indica que no existe medición cargada para esa celda
+- Se **excluye** de todos los cálculos (promedios, máximos, mínimos)
+- Se reporta como "Sin medición" en la interfaz
+
+**Ejemplo de matriz inicial:**
+```
+sectores = [
+    [45, 52, 48, 61, -1, -1, -1],  # Sector A: 4 días con datos
+    [78, 82, 79, -1, -1, -1, -1],  # Sector B: 3 días con datos
+    [-1, -1, -1, -1, -1, -1, -1],  # Sector C: sin datos aún
+    [35, 40, 38, 42, 39, 41, 36],  # Sector D: semana completa
+    [65, 68, 70, 72, 71, 69, 67]   # Sector E: semana completa
+]
+```
+
 ---
 
 ## 5. COMPONENTES Y MÓDULOS
 
-### 5.1 Estructura Modular Mínima
+### 5.1 Estructura Modular
 
 ```
 proyecto_etapa1/
-├── main.py              # Menú, entradas, coordinación general
+├── main.py              # Menú interactivo
 ├── datos.py             # Constantes y datos iniciales
-├── operaciones.py       # Validaciones, búsquedas, cálculos e informes
+├── operaciones.py       # Funciones de cálculo y procesamiento
 └── README.md            # Documentación
 ```
 
 ### 5.2 Responsabilidades por Módulo
 
 **main.py:**
-- Menú principal interactivo
+- Menú principal interactivo (6 opciones)
 - Captura de entradas del usuario
-- Validación de opciones
-- Coordinación del flujo de la aplicación
-- Presentación de resultados al usuario
+- Validación de opciones de menú
+- Llamada a funciones de operaciones.py
+- Presentación de resultados
 
 **datos.py:**
-- Constantes configurables (límites, nombres de sectores)
-- Tuplas inmutables (días de la semana, sectores)
-- Función para cargar datos iniciales
+- Constantes configurables (límites de humedad)
+- Tuplas inmutables (días de la semana, nombres de sectores)
+- Función para cargar matriz inicial
 - Datos preestablecidos para pruebas
 
 **operaciones.py:**
-- Todas las funciones de validación
-- Funciones de búsqueda y consulta
-- Funciones de cálculo e indicadores
-- Funciones de análisis y detección de condiciones
-- Generación de reportes
+- Todas las funciones de cálculo
+- Todas las funciones de búsqueda y consulta
+- Funciones de validación básica
+- Función de generación de reporte
 
 ---
 
-## 6. FUNCIONES PRINCIPALES A IMPLEMENTAR
-(FLAG)
+## 6. FUNCIONES PRINCIPALES A IMPLEMENTAR (8 Funciones)
+
 ### 6.1 Consulta de Datos
-- `getValuesPerSector(sectores, id_sector)` → Lista de valores
+```python
+def getValuesPerSector(sectores, id_sector) -> list:
     """
-    Consulta completa de un sector.
+    Retorna lista de valores de humedad para un sector específico.
     
-    Retorna información:
-    {
-        'nombre': 'Sector B',
-        'mediciones': {
-            'Lunes': 45.0,
-            'Martes': 52.0,
-            'Miércoles': -1,  # Sin medición
-            ...
-        },
-        'promedio': 48.5,
-        'maximo': 52.0,
-        'maximo_dia': 'Martes',
-        'minimo': 45.0,
-        'minimo_dia': 'Lunes',
-        'estado': 'IDEAL'
-    }
+    Parámetros:
+    - sectores: matriz de humedad
+    - id_sector: ID del sector (1-5)
+    
+    Retorna: Lista con 7 valores (uno por día)
+    
+    Nota: Se excluyen valores -1 en presentación
     """
-- `orderHumidityValues(valores)` → Lista ordenada (mayor a menor)
-(FLAG)
+
+def orderHumidityValues(valores) -> list:
+    """
+    Ordena valores de humedad de mayor a menor.
+    
+    Parámetros:
+    - valores: lista de valores numéricos
+    
+    Retorna: Lista ordenada (usa lambda como criterio)
+    
+    Ejemplo: [65, 50, 40, 30, 20] → [65, 50, 40, 30, 20]
+    """
+```
+
 ### 6.2 Indicadores Globales
-- `getMaxHumidityValue(sector_id=None)` → objeto con valor, sector y dia (máximo)
-- `getMinHumidityValue(sector_id=None)` → objeto con valor, sector y dia (máximo)
-- `getAverageHumidityPerSector(sectores)` → list (promedios por sector)
-"""
+```python
+def getMaxHumidityValue(sectores) -> float:
+    """
+    Obtiene el valor máximo de humedad en toda la matriz.
+    
+    Excluye valores -1 (sin medición).
+    
+    Retorna: float con el máximo encontrado
+    """
+
+def getMinHumidityValue(sectores) -> float:
+    """
+    Obtiene el valor mínimo de humedad en toda la matriz.
+    
+    Excluye valores -1 (sin medición).
+    
+    Retorna: float con el mínimo encontrado
+    """
+
+def getAverageHumidityPerSector(sectores) -> list:
+    """
     Calcula promedio de humedad por sector.
     
-    - Excluye valores -1 (sin medición)
-    - Si un sector no tiene mediciones: retorna -1 y mensaje informativo
-    - Si un sector tiene algunas mediciones: promedia solo las válidas
+    Excluye valores -1 de los cálculos.
+    Si un sector no tiene mediciones: devuelve -1.
     
-    Retorna: Lista de promedios por sector
+    Retorna: Lista con promedio por cada sector
     
-    Ejemplo:
-    [45.3, 80.0, -1, 38.5, 68.2]  # Sector C sin datos
-"""
-- `getTotalAverageHumidity(sectores)` → float (promedio global)
+    Ejemplo: [45.3, 80.0, -1, 38.5, 68.2]
+    """
+
+def getAverageHumidityTotal(sectores) -> float:
+    """
+    Calcula el promedio total de humedad del campo.
+    
+    Excluye valores -1.
+    
+    Retorna: float con promedio semanal del campo
+    """
+```
 
 ### 6.3 Detección de Condiciones
-- `getCriticalLowHumidity(sectores, limite=20)` → lista (sectores críticos)
-- `getCriticalHighHumidity(sectores, limite=80)` → lista (sectores críticos)
-- `getIdealValues(sectores, humedad_ideal=50, tolerancia=10)` → lista (sectores ideales)
+```python
+def getCriticalValues(sectores, limite_bajo=20, limite_alto=80) -> list:
+    """
+    Obtiene lista de sectores con humedad crítica.
+    
+    Considera ambos casos:
+    - Crítico bajo: humedad < limite_bajo (20%)
+    - Crítico alto: humedad > limite_alto (80%)
+    
+    Retorna: Lista con índices de sectores críticos
+    
+    Nota: Usa comprensión de listas
+    """
 
-### 6.4 Registro de Datos
-(FLAG)
-- `registrar_medicion(sectores, id_sector, humedad, dia)` → bool
-- `getRankingSectoresPorPromedio(valor)` → bool (lambda)
-""" Ordena sectores de MENOR a MAYOR promedio semanal de humedad. """
-- `validar_sector(id_sector, total_sectores)` → bool
-### 6.5 Reportes
+def getIdealValues(sectores, ideal_bajo=40, ideal_alto=60) -> list:
+    """
+    Obtiene lista de sectores con humedad ideal.
+    
+    Rango: entre ideal_bajo y ideal_alto (40-60%)
+    
+    Retorna: Lista con índices de sectores ideales
+    """
+```
 
-Función principal:
+### 6.4 Reporte
+```python
 def generar_reporte_final(sectores, nombres_sectores, dias_semana) -> str:
-    """Genera resumen general integrando todos los informes"""
+    """
+    Genera reporte simplificado con información clave.
+    
+    Incluye:
+    - Indicadores generales (max, min, promedio)
+    - Promedio por sector
+    - Sectores críticos
+    - Sectores ideales
+    
+    Retorna: String formateado para mostrar en consola
+    """
+```
 
-El reporte debe incluir estos 5 informes:
-
-1. **Informe por Sector (Tabla Semanal)**
-   - Para cada sector: mediciones de cada día, promedio, estado
-   
-2. **Informe Diario**
-   - Para cada día: promedio del campo, cantidad de mediciones cargadas
-   
-3. **Alertas - Sectores Críticos Bajos**
-   - Lista de sectores con humedad <20% (días específicos)
-   
-4. **Alertas - Sectores Críticos Altos**
-   - Lista de sectores con humedad >80% (días específicos)
-   
-5. **Ranking de Sectores**
-   - Ordenados de menor a mayor promedio semanal
-   - Interpretación: primeros = más secos, últimos = más húmedos
-
-### 6.6 Contadores
--  `countCriticalLowHumidity(sectores, limite=20)` -> int:
-    """Cuenta sectores con humedad crítica baja"""
-
--  `countCriticalHighHumidity(sectores, limite=80)` -> int:
-    """Cuenta sectores con humedad crítica alta"""
-
--  `countIdealHumidity(sectores, ideal_bajo=40, ideal_alto=60)` -> int:
-    """Cuenta sectores con humedad ideal"""
 ---
 
 ## 7. CARACTERÍSTICAS TÉCNICAS OBLIGATORIAS
 
 El proyecto **debe evidenciar**:
 
-- ✅ **Funciones y parámetros:** Descomposición en operaciones cohesivas
-- ✅ **Módulos:** Separación de responsabilidades entre archivos
-- ✅ **Listas:** Para colecciones de datos
+- ✅ **Funciones y parámetros:** 8 funciones modulares con parámetros claros
+- ✅ **Módulos:** 3 archivos con responsabilidades separadas
+- ✅ **Listas:** Para colecciones de datos y resultados
 - ✅ **Matrices:** Para datos bidimensionales (sectores × días)
-- ✅ **Tuplas:** Para datos inmutables (constantes)
-- ✅ **Cadenas:** Normalización y validación
-- ✅ **Comprensión, slicing y/o lambda:** Uso justificado en al menos una operación
-- ✅ **Ciclos y decisiones:** Menú repetitivo, recorridos, búsquedas
-- ✅ **Validaciones:** Sin cerrar el programa ante errores
+- ✅ **Tuplas:** Para datos fijos (días, nombres de sectores, límites)
+- ✅ **Cadenas:** Validación y formato de mensajes
+- ✅ **Lambda:** Uso en ordenamiento de valores
+- ✅ **Comprensión:** Uso en filtrado de datos críticos/ideales
+- ✅ **Ciclos y decisiones:** Menú repetitivo, recorridos, validaciones
+- ✅ **Validaciones:** Sector (1-5), día (0-6), humedad (0-100), opción de menú
 - ✅ **Git/GitHub:** Commits progresivos con participación verificable
 
 ---
@@ -270,106 +300,201 @@ El proyecto **debe evidenciar**:
 
 ### 8.1 Lo que SÍ está incluido en Etapa 1
 - Estructuras de datos en memoria (listas, matrices, tuplas)
-- Funciones modulares y validaciones
+- Funciones modulares y validaciones básicas
 - Menú interactivo por consola
-- Cálculos e informes
+- Cálculos e informes simplificados
 - Control de errores sin cierre de programa
 - Repositorio Git con commits progresivos
 
 ### 8.2 Lo que NO está incluido en Etapa 1
 - ❌ Persistencia de datos (archivos, bases de datos)
 - ❌ Interfaz gráfica
-- ❌ Diccionarios o conjuntos
-- ❌ Conexión a servidores remotos
-- ❌ Importación desde archivos externos
+- ❌ Configuración de límites desde el menú (solo constantes)
+- ❌ Actualización con confirmación de mediciones existentes
+- ❌ Promedio por día
+- ❌ Ranking ordenado de sectores
+- ❌ Gráficos o visualización ASCII
 
 ---
 
 ## 9. INTEGRANTES Y RESPONSABILIDADES
 
-| Estudiante | Rol Principal | Historias Asignadas | Responsabilidades |
-|-----------|---------------|-------------------|------------------|
-| **Nicole** | Coordinación/Infraestructura | H1, H4, H7 | Setup, validaciones, menú principal |
-| **Jesica** | Consultas/Reportes | H2, H5, H8 | Lectura de datos, ideales, reporte |
-| **Priscila** | Análisis/Cálculos | H3, H6, H9 | Indicadores, registro, documentación |
+| Estudiante | Rol Principal | Historias | Funciones Desarrolladas |
+|-----------|---------------|-----------|------------------------|
+| **Nicole** | Infraestructura | H1, H4 | Setup, registrar_medicion() |
+| **Jesica** | Consultas | H2, H5 | getValuesPerSector(), getCriticalValues(), getIdealValues() |
+| **Priscila** | Análisis | H3, H6 | Indicadores (Max, Min, Promedios), generar_reporte_final(), README |
 
 **Requisito:** Cada integrante debe participar en funciones, módulos, interfaz y documentación.
 
 ---
 
-## 10. TECNOLOGÍA Y HERRAMIENTAS
+## 10. VALIDACIONES NECESARIAS
 
-### 10.1 Lenguaje y Versión
+El sistema validará:
+
+- ✅ Sector ingresado (debe estar entre 1-5)
+- ✅ Día ingresado (debe estar entre 0-6)
+- ✅ Humedad ingresada (debe estar entre 0-100)
+- ✅ Entrada numérica válida (rechazar caracteres no numéricos)
+- ✅ Opción de menú válida (rechazar opciones inexistentes)
+
+**Comportamiento:** Ante error, mostrar mensaje claro y permitir reintentar (sin cerrar programa)
+
+---
+
+## 11. TECNOLOGÍA Y HERRAMIENTAS
+
+### 11.1 Lenguaje y Versión
 - **Python:** 3.8 o superior
 - **Interfaz:** Consola (terminal/cmd)
 
-### 10.2 Control de Versiones
+### 11.2 Control de Versiones
 - **Git:** Sistema de control de versiones local
 - **GitHub:** Repositorio remoto para trabajo colaborativo
 
-(FLAG)
-### 10.3 Librerías y Configuración
+### 11.3 Librerías
+- Estándar de Python (sin dependencias externas)
+- `random` para generación de datos de prueba (opcional)
 
-Los límites de humedad se definen como **constantes** en datos.py:
-
+### 11.4 Configuración
 ```python
-# En datos.py
-HUMEDAD_CRITICO_BAJO = 20      # Límite inferior
-HUMEDAD_IDEAL_BAJO = 40        # Rango ideal
-HUMEDAD_IDEAL_ALTO = 60        # Rango ideal
-HUMEDAD_CRITICO_ALTO = 80      # Límite superior
+# En datos.py - Constantes (NO modificables en tiempo de ejecución)
+CRITICO_BAJO = 20
+IDEAL_BAJO = 40
+IDEAL_ALTO = 60
+CRITICO_ALTO = 80
 ```
-
-Durante ESTA ETAPA (Etapa 1):
-- ❌ El usuario NO puede modificar estos límites desde el menú
-- ✅ Son constantes de configuración centralizadas
-- ✅ Se pueden cambiar editando datos.py (no en tiempo de ejecución)
 
 ---
 
-## 11. CRITERIOS DE ACEPTACIÓN GENERALES
+## 12. CRITERIOS DE ACEPTACIÓN GENERALES
 
 El proyecto será aceptado cuando:
 
-1. ✅ Se ejecute desde `main.py` sin errores
-2. ✅ El menú funcione correctamente y acceda a todas las funcionalidades
-3. ✅ Todas las funciones validadas devuelvan resultados correctos
-4. ✅ Los datos inválidos se rechacen sin cerrar el programa
-5. ✅ Las estructuras de datos (lista, matriz, tupla) se utilicen correctamente
-6. ✅ El repositorio contenga commits de todos los integrantes
-7. ✅ El README explique problema, integrantes, ejecución y funcionalidades
-8. ✅ Todos los integrantes comprendan y puedan explicar el sistema completo
+1. ✅ Se ejecuta desde `main.py` sin errores
+2. ✅ El menú funciona correctamente (6 opciones funcionan)
+3. ✅ Registro de mediciones: validar sector, día y humedad
+4. ✅ Consulta de sector: mostrar los 7 valores del día
+5. ✅ Indicadores: máximo, mínimo, promedios calculan correctamente
+6. ✅ Alertas: detecta sectores críticos e ideales
+7. ✅ Reporte final: muestra resumen con información clave
+8. ✅ Validaciones: rechaza datos inválidos sin cerrar programa
+9. ✅ Estructuras: matriz, listas, tuplas usadas correctamente
+10. ✅ Lambda: utilizado en ordenamiento
+11. ✅ Comprensión: utilizado en filtrado
+12. ✅ Repositorio: contiene commits de todos los integrantes
+13. ✅ README: explica problema, autores, ejecución, funcionalidades
+14. ✅ Todos los integrantes comprenden el sistema completo
 
 ---
 
-## 12. DELIVERABLES
+## 13. ESTIMACIÓN DE TRABAJO
 
-| Entregable | Contenido | Responsable |
-|-----------|-----------|-------------|
-| **Repositorio Git** | Código funcional + commits progresivos | Todos |
-| **README.md** | Descripción, instrucciones, autores | Estudiante 3 |
-| **Documento de Análisis** | Este alcance + decisiones de diseño | Equipo |
-| **Casos de Prueba** | Datos válidos, inválidos, límites | Todos |
-| **Presentación (8-10 min)** | Demo + explicación de funcionamiento | Todos |
+| Componente | Líneas Aprox. | Tiempo Estimado |
+|-----------|---------------|-----------------|
+| main.py (menú simple) | 100-150 | 2-3 horas |
+| datos.py (constantes) | 30-50 | 30 minutos |
+| operaciones.py (8 funciones) | 200-250 | 5-6 horas |
+| README.md | 150-200 | 1 hora |
+| **TOTAL** | **~500 líneas** | **~10 horas** |
 
----
-
-## 13. TIMELINE ESTIMADO
-
-| Semana | Actividad |
-|--------|-----------|
-| **Semana 1** | Setup del proyecto (H1), Consultas (H2), Indicadores (H3) |
-| **Semana 2** | Validaciones (H4), Ideales (H5), Registro (H6) |
-| **Semana 2-3** | Menú (H7), Reportes (H8), Documentación (H9) |
-| **Semana 3** | Testing, integración, ensayo de presentación |
+**Por persona:** ~3-4 horas (muy manejable)
 
 ---
 
-## 14. NOTAS IMPORTANTES
+## 14. PLAN DE TRABAJO (6 Historias)
+
+### H1: Setup del Proyecto y Datos Base (Nicole)
+- Crear estructura de carpetas y módulos
+- Inicializar repositorio Git
+- Definir constantes en datos.py
+- Crear matriz inicial con datos de prueba
+
+### H2: Consultas de Datos (Jesica)
+- Implementar getValuesPerSector()
+- Implementar orderHumidityValues() con lambda
+- Crear menú "Consultar sector"
+- Validar entrada de sector
+
+### H3: Indicadores de Humedad (Priscila)
+- Implementar getMaxHumidityValue()
+- Implementar getMinHumidityValue()
+- Implementar getAverageHumidityPerSector()
+- Implementar getAverageHumidityTotal()
+- Crear menú "Ver indicadores"
+
+### H4: Registro de Mediciones (Nicole)
+- Implementar registrar_medicion()
+- Validar sector, día, humedad
+- Crear menú "Registrar medición"
+- Mensaje de confirmación
+
+### H5: Alertas y Detección (Jesica)
+- Implementar getCriticalValues()
+- Implementar getIdealValues()
+- Crear menú "Ver sectores críticos"
+- Crear menú "Ver sectores ideales"
+
+### H6: Reporte Final y Documentación (Priscila)
+- Implementar generar_reporte_final()
+- Crear menú "Generar reporte"
+- Redactar README.md completo
+- Documentar decisiones de diseño
+
+---
+
+## 15. MENÚ PRINCIPAL (6 Opciones)
+
+```
+=== SISTEMA DE MONITOREO DE HUMEDAD EN CULTIVOS ===
+
+1. Consultar valores por sector
+2. Ver indicadores generales
+3. Ver sectores críticos
+4. Ver sectores ideales
+5. Registrar nueva medición
+6. Generar reporte final
+0. Salir
+
+Ingrese opción:
+```
+
+---
+
+## 16. REPORTE FINAL (Simplificado)
+
+```
+=== REPORTE SEMANAL DE HUMEDAD EN CULTIVOS ===
+
+INDICADORES GENERALES:
+- Promedio del campo: 55.2%
+- Máximo: 82.0%
+- Mínimo: 12.0%
+
+PROMEDIO POR SECTOR:
+- Sector A: 45.3%
+- Sector B: 80.0%
+- Sector C: N/A (sin mediciones)
+- Sector D: 38.5%
+- Sector E: 68.2%
+
+SECTORES CRÍTICOS (< 20% o > 80%):
+- Sector B (80.0%)
+
+SECTORES IDEALES (40-60%):
+- Sector A (45.3%)
+- Sector D (38.5%)
+```
+
+---
+
+## 17. NOTAS IMPORTANTES
 
 - 📝 Las decisiones de diseño deben documentarse en el README
-- 🔄 Los commits deben ser pequeños y descriptivos
+- 🔄 Los commits deben ser pequeños y descriptivos (mínimo 6 commits por persona)
 - 👥 Todos deben tocar código, interfaz y documentación
-- ✅ Las funciones lambda deben usarse en cálculos de promedios
+- ✅ Lambda debe usarse en ordenamiento (orderHumidityValues)
+- ✅ Comprensión debe usarse en filtrado (getCriticalValues, getIdealValues)
 - 🎯 El sistema debe ser comprensible y usable sin instrucciones previas
 

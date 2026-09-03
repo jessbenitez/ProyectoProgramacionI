@@ -1,4 +1,6 @@
+from datos import cargar_datos_iniciales
 import perfil_equipo
+import operaciones
 
 
 def main():
@@ -23,6 +25,13 @@ def main():
 
     tiene_digitos = perfil_equipo.contiene_digitos(nombre_equipo)
     print(f"El nombre del equipo contiene dígitos: {tiene_digitos}")
+
+    #A partir de este punto comenzamos a implementar el programa
+    valores_actuales = cargar_datos_iniciales()
+
+    operaciones.menu(valores_actuales)
+
+    
 
 if __name__ == "__main__":
     main()

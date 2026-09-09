@@ -2,7 +2,7 @@ from datos import NOMBRE_SECTORES
 from datos import DIAS_SEMANA
 from datos import mostrar_matriz
 
-
+# Validación de datos--------------------------------------------------------------------(nicky)
 def validar_sector(sector):
    if (sector.isnumeric() and int(sector) in range(len(NOMBRE_SECTORES))):
        return True

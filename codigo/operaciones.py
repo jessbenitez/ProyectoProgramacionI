@@ -50,9 +50,25 @@ def registrar_medicion(valores_actuales):
         print(f"Error: {error}")
         return valores_actuales
 
+#Funciones seccion Priscila--------------------------------------------------------------------(priscila)
+# funcion que devuelvve 1 sector en especifico, lo indica el usuario
+def getValuesPerSector(sector_id):
+    if not validar_sector(sector_id):
+            id_sector = input("Ingrese el numero de sector: ")
+            while not validar_sector(id_sector): #si el sector ingresado no es valido, se le vuelve a pedir al usuario que ingrese un sector valido
+                print("Sector inválido")
+                id_sector = input("Ingrese el numero de sector: ")
+    return datos[sector_id]
+
+#def ordenHumidityValues(sector_id):
+
+
+#-----------------------------------------------------------------------------------
+
+#Opciones del menú--------------------------------------------------------------------(nicky)
 def menu(valores_actuales):
     while True:
-        opcion = input("¿Qué desea hacer? (1 = Ver matriz de humedad / 2 = Registrar medición / fin = Salir): ").strip().lower()
+        opcion = input("¿Qué desea hacer? (1 = Ver matriz de humedad / 2 = Registrar medición / 3 = Obtener valores de un sector / fin = Salir): ").strip().lower()
 
         match opcion:
             case "fin":
@@ -61,5 +77,8 @@ def menu(valores_actuales):
                 mostrar_matriz(valores_actuales)
             case "2":
                 registrar_medicion(valores_actuales)
+            case "3":
+                # Llamar a la función para obtener los valores de un sector específico
+                getValuesPerSector(valores_actuales)
             case _:
                 print("Opción inválida")

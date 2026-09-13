@@ -93,6 +93,77 @@ def mostrar_detalle_sector(sectores: list, id_sector: int):
     valores_ordenados = orderHumidityValues(valores_sector)
     print(f"\nValores ordenados (mayor a menor): {valores_ordenados}\n")
 
+
+def pedir_entero_positivo(mensaje: str) -> int:
+    """Valida la entrada de enteros mayores o iguales a 0 usando solo flujo condicional."""
+    val_input = input(mensaje)
+    while not (val_input.isnumeric() and int(val_input) >= 0):
+        print("Error: Ingrese un entero válido mayor o igual a 0.")
+        val_input = input(mensaje)
+    return int(val_input)
+
+def pedir_rango_ideal() -> tuple:
+    """Consulta al usuario si desea personalizar los parámetros y retorna (humedad_ideal, tolerancia)."""
+    cambiar = input("¿Desea personalizar el rango ideal? (Por defecto 40%-60%) [s/N]: ").strip().lower()
+    
+    if cambiar == "s":
+        ideal = pedir_entero_positivo("Ingrese la humedad ideal base (%): ")
+        tolerancia = pedir_entero_positivo("Ingrese la tolerancia (±%): ")
+        return ideal, tolerancia
+    
+    # Si no desea cambiar, retorna los valores por defecto (50 ± 10)
+    return 50, 10
+
+def mostrar_sectores_ideales(sectores: list):
+    """Maneja la presentación completa del módulo de Zona Ideal."""
+    print("\n--- Identificación de Zona Ideal ---")
+    
+    # 1. Captura de parámetros (reutilizando la función de captura)
+    ideal_target, tolerancia = pedir_rango_ideal()
+    
+    # 2. Obtención de datos calculados
+    ideales, total, prom_general = getIdealValues(sectores, ideal_target, tolerancia)
+    
+    rango_min = ideal_target - tolerancia
+    rango_max = ideal_target + tolerancia
+
+    # 3. Impresión de resultados
+    print(f"\nSectores en Zona Ideal ({rango_min}% - {rango_max}%):")
+    if total > 0:
+        for nombre, prom in ideales:
+            print(f" • {nombre}: {prom:.1f}% de humedad promedio")
+    else:
+        print(" No hay sectores con promedio dentro del rango ideal.")
+    
+    print(f"\nCantidad total de sectores ideales: {total}")
+    print(f"Promedio general de sectores ideales: {prom_general:.1f}%\n")
+
+def getIdealValues(sectores: list, humedad_ideal: int = 50, tolerancia: int = 10) -> tuple:
+    """Retorna (lista_sectores_ideales, cantidad_total, promedio_ideal)"""
+    limite_inferior = humedad_ideal - tolerancia
+    limite_superior = humedad_ideal + tolerancia
+    
+    sectores_ideales = []
+    suma_promedios_ideales = 0
+    
+    for idx, fila in enumerate(sectores):
+        # Filtramos los días sin registro (-1)
+        mediciones_validas = [val for val in fila if val != -1]
+        
+        if len(mediciones_validas) > 0:
+            promedio_sector = sum(mediciones_validas) / len(mediciones_validas)
+            
+            # Verificamos si el promedio cae dentro del rango [40%, 60%]
+            if limite_inferior <= promedio_sector <= limite_superior:
+                nombre = NOMBRE_SECTORES[idx]
+                sectores_ideales.append((nombre, promedio_sector))
+                suma_promedios_ideales += promedio_sector
+
+    cantidad_total = len(sectores_ideales)
+    promedio_general_ideal = (suma_promedios_ideales / cantidad_total) if cantidad_total > 0 else 0.0
+
+    return (sectores_ideales, cantidad_total, promedio_general_ideal)
+
 #-------------------------------------------------------------------------------------------
 def menu(valores_actuales):
     while True:
@@ -100,6 +171,7 @@ def menu(valores_actuales):
                                 "1 = Ver matriz de humedad / " \
                                 "2 = Registrar medición / " \
                                 "3 = Obtener valores de un sector / " \
+                                "4 = Ver sectores ideales / " \
                                 "fin = Salir): " \
                                 ).strip().lower()
 
@@ -113,5 +185,7 @@ def menu(valores_actuales):
             case "3":
                 sector_id = pedir_sector_valido()
                 mostrar_detalle_sector(valores_actuales, sector_id)
+            case "4":
+                mostrar_sectores_ideales(valores_actuales)
             case _:
                 print("Opción inválida")

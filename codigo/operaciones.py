@@ -247,7 +247,7 @@ def menu(valores_actuales):
     while True:
         opcion = input("¿Qué desea hacer? (" \
                                 "1 = Ver matriz de humedad / " \
-                                "2 = Registrar medición / " \
+                                "2 = Ver indicadores generales / " \
                                 "3 = Obtener valores de un sector / " \
                                 "4 = Ver sectores ideales / " \
                                 "6 = Generar Reporte Final / " \
@@ -260,7 +260,14 @@ def menu(valores_actuales):
             case "1":
                 mostrar_matriz(valores_actuales)
             case "2":
-                registrar_medicion(valores_actuales)
+                print("\n=== INDICADORES GENERALES ===")
+                print(f"Máximo global:    {getMaxHumidityValue(valores_actuales):.1f}%")
+                print(f"Mínimo global:    {getMinHumidityValue(valores_actuales):.1f}%")
+                print(f"Promedio campo:   {getAverageHumidityTotal(valores_actuales):.1f}%\n")
+                
+                print("PROMEDIO POR SECTOR:")
+                for nom, prom in zip(NOMBRE_SECTORES, getAverageHumidityPerSector(valores_actuales)):
+                    print(f"{nom}: {f'{prom:.1f}%' if prom >= 0 else 'N/A (sin mediciones)'}")
             case "3":
                 sector_id = pedir_sector_valido()
                 mostrar_detalle_sector(valores_actuales, sector_id)

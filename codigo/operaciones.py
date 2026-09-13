@@ -246,10 +246,11 @@ def generar_reporte_final(sectores: list, nombres_sectores: tuple, dias_semana: 
 def menu(valores_actuales):
     while True:
         opcion = input("¿Qué desea hacer? (" \
-                                "1 = Ver matriz de humedad / " \
+                                "1 = Consultar valores por sector (Matriz) / " \
                                 "2 = Ver indicadores generales / " \
-                                "3 = Obtener valores de un sector / " \
+                                "3 = Ver sectores críticos / " \
                                 "4 = Ver sectores ideales / " \
+                                "5 = Registrar nueva medición / " \
                                 "6 = Generar Reporte Final / " \
                                 "fin = Salir): " \
                                 ).strip().lower()
@@ -273,6 +274,8 @@ def menu(valores_actuales):
                 mostrar_detalle_sector(valores_actuales, sector_id)
             case "4":
                 mostrar_sectores_ideales(valores_actuales)
+            case "5":
+                registrar_medicion(valores_actuales)
             case "6":
                 reporte_texto = generar_reporte_final(valores_actuales, NOMBRE_SECTORES, DIAS_SEMANA)
                 print("\n" + reporte_texto)

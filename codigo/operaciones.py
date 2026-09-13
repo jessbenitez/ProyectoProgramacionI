@@ -51,6 +51,26 @@ def registrar_medicion(valores_actuales):
         return valores_actuales
 
 
+# Reemplazar cuando estén listas las funciones definitivas
+
+def getTotalTrendingHumidity(sectores: list) -> float:
+    # Aca va a ir la logica de la funcion definitiva
+    return 53.4
+
+def getTrendingHumidityPerSector(sectores: list) -> list:
+    # Aca va a ir la logica de la funcion definitiva
+    # Devuelve un promedio ficticio para cada uno de los 5 sectores
+    return [59.3, 61.3, 73.8, 35.5, 47.6]
+
+def getMaxHumidityValue(sectores: list) -> float:
+    # Aca va a ir la logica de la funcion definitiva
+    return 99.0
+
+def getMinHumidityValue(sectores: list) -> float:
+    # Aca va a ir la logica de la funcion definitiva
+    return 13.0
+
+
 #
 def pedir_sector_valido():
     sec_input = input("Ingrese el número de sector (1-5): ")
@@ -101,11 +121,10 @@ def pedir_rango_ideal() -> tuple:
         return ideal, tolerancia
     return 50, 10
 
+
 def mostrar_sectores_ideales(sectores: list):
     print("\n--- Identificación de Zona Ideal ---")
-    
     ideal_target, tolerancia = pedir_rango_ideal()
-    
     ideales, total, prom_general = getIdealValues(sectores, ideal_target, tolerancia)
     
     rango_min = ideal_target - tolerancia
@@ -114,7 +133,8 @@ def mostrar_sectores_ideales(sectores: list):
     print(f"\nSectores en Zona Ideal ({rango_min}% - {rango_max}%):")
     if total > 0:
         for nombre, prom in ideales:
-            print(f" • {nombre}: {prom:.1f}% de humedad promedio")
+            barra = generar_barra_ascii(prom)
+            print(f" • {nombre:<12}: {prom:.1f}% [{barra}]")
     else:
         print(" No hay sectores con promedio dentro del rango ideal.")
     
@@ -144,6 +164,82 @@ def getIdealValues(sectores: list, humedad_ideal: int = 50, tolerancia: int = 10
 
     return (sectores_ideales, cantidad_total, promedio_general_ideal)
 
+def generar_reporte_final(sectores: list, limite_bajo: float = 20.0, limite_alto: float = 80.0) -> str:
+    """Consume las métricas del sistema y construye el informe ejecutivo formateado."""
+    
+    promedio_global = getTotalTrendingHumidity(sectores)
+    promedios_por_sector = getTrendingHumidityPerSector(sectores)
+    max_global = getMaxHumidityValue(sectores)
+    min_global = getMinHumidityValue(sectores)
+
+    promedios = list(zip(NOMBRE_SECTORES, promedios_por_sector))
+
+    mejor = min(promedios, key=lambda x: abs(x[1] - 50.0))
+    peor = max(promedios, key=lambda x: abs(x[1] - 50.0))
+
+
+    criticos = sum(1 for _, p in promedios if p < limite_bajo or p > limite_alto)
+    ideales = sum(1 for _, p in promedios if 40.0 <= p <= 60.0)
+
+
+    linea = "=" * 72
+    reporte = [
+        linea,
+        "                     REPORTE EJECUTIVO FINAL                      ",
+        linea,
+        f"Promedio Global del Campo : {promedio_global:.1f}%",
+        f"Máximo Global Registrado  : {max_global:.1f}%",
+        f"Mínimo Global Registrado  : {min_global:.1f}%",
+        f"Mejor Sector (ref 50%)    : {mejor[0]} ({mejor[1]:.1f}%)",
+        f"Peor Sector (ref 50%)     : {peor[0]} ({peor[1]:.1f}%)",
+        f"Sectores Críticos         : {criticos}",
+        f"Sectores Ideales          : {ideales}",
+        linea,
+        f"| {'Sector':<12} | {'Promedio':<8} | {'Estado':<10} | {'Gráfico (0-100%)':<14} |",
+        "-" * 72
+    ]
+
+
+    for nom, p in promedios:
+        barra = generar_barra_ascii(p)
+        if p < limite_bajo or p > limite_alto:
+            est = "CRÍTICO"
+        elif 40.0 <= p <= 60.0:
+            est = "IDEAL"
+        else:
+            est = "Aceptable"
+            
+        reporte.append(f"| {nom:<12} | {p:.1f}%   | {est:<10} | [{barra}] |")
+
+
+    ranking = sorted(promedios, key=lambda x: abs(x[1] - 50.0))
+    reporte.append(linea)
+    reporte.append("RANKING DE SECTORES (De mejor a peor según humedad ideal 50%):")
+    reporte.append("-" * 72)
+    for pos, (nom, p_val) in enumerate(ranking, start=1):
+        reporte.append(f" {pos}. {nom:<12} -> Promedio: {p_val:.1f}%")
+    reporte.append(linea)
+
+    return "\n".join(reporte)
+
+#--------------------------------------------codigo ascii------------------------------------------------
+def generar_barra_ascii(porcentaje, escala: int = 10, caracter_lleno: str = "█", caracter_vacio: str = "░") -> str:
+    if porcentaje is None or porcentaje != porcentaje:
+        return "N/A"
+    
+    try:
+        val = float(porcentaje)
+        val_clamped = max(0.0, min(100.0, val))
+        
+        # Con escala 10, el máximo de bloques es 10 (100 // 10 = 10)
+        bloques_llenos = int(val_clamped // escala)
+        bloques_vacios = 10 - bloques_llenos
+        
+        return (caracter_lleno * bloques_llenos) + (caracter_vacio * bloques_vacios)
+    except (ValueError, TypeError):
+        return "N/A"
+
+
 
 #------------------------------------------------------------------------------------------------------------------------------
 def menu(valores_actuales):
@@ -169,5 +265,7 @@ def menu(valores_actuales):
                 mostrar_detalle_sector(valores_actuales, sector_id)
             case "4":
                 mostrar_sectores_ideales(valores_actuales)
+            case "5":
+                print(generar_reporte_final(valores_actuales))
             case _:
                 print("Opción inválida")

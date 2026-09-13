@@ -2,9 +2,7 @@ from datos import NOMBRE_SECTORES
 from datos import DIAS_SEMANA
 from datos import mostrar_matriz
 
-
 def validar_sector(sector):
-   #modificacion en el rango 
    if (sector.isnumeric() and int(sector) in range(1,len(NOMBRE_SECTORES))):
        return True
    else:
@@ -51,8 +49,6 @@ def registrar_medicion(valores_actuales):
         print(f"Error: {error}")
         return valores_actuales
 
-# 2. EL CAPTURADOR (Tu función nueva)
-# Usa a la función de tu compañera dentro del while not para insistir hasta que sea correcto
 def pedir_sector_valido():
     sec_input = input("Ingrese el número de sector (1-5): ")
     
@@ -63,8 +59,6 @@ def pedir_sector_valido():
         
     return int(sec_input)
 
-# 3. EL CONSULTOR (Tu función pura)
-# Solo busca en la matriz el sector que ya sabemos que es 100% válido
 def getValuesPerSector(valores_actuales, sector_id):
     posicion_sector = sector_id - 1
     return valores_actuales[posicion_sector]
@@ -81,7 +75,6 @@ def mostrar_detalle_sector(sectores: list, id_sector: int):
 
     print(f"\n--- Mediciones del Sector {id_sector} ({nombre_sector}) ---")
     
-    # Impresión día por día
     for idx, humedad in enumerate(valores_sector):
         dia_nombre = DIAS_SEMANA[idx]
         if humedad == -1:
@@ -89,7 +82,6 @@ def mostrar_detalle_sector(sectores: list, id_sector: int):
         else:
             print(f"{dia_nombre}: {humedad}% de humedad")
 
-    # Llamada interna a la función de ordenamiento requerida
     valores_ordenados = orderHumidityValues(valores_sector)
     print(f"\nValores ordenados (mayor a menor): {valores_ordenados}\n")
 
@@ -110,24 +102,19 @@ def pedir_rango_ideal() -> tuple:
         ideal = pedir_entero_positivo("Ingrese la humedad ideal base (%): ")
         tolerancia = pedir_entero_positivo("Ingrese la tolerancia (±%): ")
         return ideal, tolerancia
-    
-    # Si no desea cambiar, retorna los valores por defecto (50 ± 10)
     return 50, 10
 
 def mostrar_sectores_ideales(sectores: list):
     """Maneja la presentación completa del módulo de Zona Ideal."""
     print("\n--- Identificación de Zona Ideal ---")
     
-    # 1. Captura de parámetros (reutilizando la función de captura)
     ideal_target, tolerancia = pedir_rango_ideal()
     
-    # 2. Obtención de datos calculados
     ideales, total, prom_general = getIdealValues(sectores, ideal_target, tolerancia)
     
     rango_min = ideal_target - tolerancia
     rango_max = ideal_target + tolerancia
 
-    # 3. Impresión de resultados
     print(f"\nSectores en Zona Ideal ({rango_min}% - {rango_max}%):")
     if total > 0:
         for nombre, prom in ideales:
@@ -147,13 +134,11 @@ def getIdealValues(sectores: list, humedad_ideal: int = 50, tolerancia: int = 10
     suma_promedios_ideales = 0
     
     for idx, fila in enumerate(sectores):
-        # Filtramos los días sin registro (-1)
         mediciones_validas = [val for val in fila if val != -1]
         
         if len(mediciones_validas) > 0:
             promedio_sector = sum(mediciones_validas) / len(mediciones_validas)
             
-            # Verificamos si el promedio cae dentro del rango [40%, 60%]
             if limite_inferior <= promedio_sector <= limite_superior:
                 nombre = NOMBRE_SECTORES[idx]
                 sectores_ideales.append((nombre, promedio_sector))
@@ -166,32 +151,25 @@ def getIdealValues(sectores: list, humedad_ideal: int = 50, tolerancia: int = 10
 
 def generar_reporte_final(sectores: list, nombres_sectores: tuple = ("Sector A", "Sector B", "Sector C"),
                           limite_bajo: float = 20.0, limite_alto: float = 80.0) -> str:
-    """
-    Integra los indicadores de humedad calculados y genera el reporte ejecutivo final.
-    """
-    # 1. LLAMADA A LAS FUNCIONES DE TU COMPAÑERA (Reutilización de métricas)
+
     promedio_global = getTotalTrendingHumidity(sectores)
     promedios_por_sector = getTrendingHumidityPerSector(sectores)
     max_global = getMaxHumidityValue(sectores)
     min_global = getMinHumidityValue(sectores)
 
-    # Validar si hay datos
+
     if promedio_global == 0.0 and all(p is None for p in promedios_por_sector):
         return "No hay suficientes datos registrados para generar el reporte."
 
-    # 2. PROCESAMIENTO PROPIO DEL REPORTE (Evaluación de estados y rankings)
-    # Emparejamos cada sector con su promedio usando zip y tuplas
     promedios = list(zip(nombres_sectores, promedios_por_sector))
-    datos_validos = [(nom, p) for nom, p in promedios if p is None or p != p] # Filtro de datos válidos
+    datos_validos = [(nom, p) for nom, p in promedios if p is None or p != p]
 
-    # Determinación de mejor y peor sector (referencia de humedad ideal: 50%)
     mejor = min(datos_validos, key=lambda x: abs(x[1] - 50.0)) if datos_validos else ("N/A", 0.0)
     peor = max(datos_validos, key=lambda x: abs(x[1] - 50.0)) if datos_validos else ("N/A", 0.0)
 
     criticos = sum(1 for _, p in datos_validos if p < limite_bajo or p > limite_alto)
     ideales = sum(1 for _, p in datos_validos if 40.0 <= p <= 60.0)
 
-    # 3. FORMATO Y SALIDA DE DATOS (Uso de f-strings y alineación)
     linea = "=" * 54
     reporte = [
         linea,
@@ -220,7 +198,6 @@ def generar_reporte_final(sectores: list, nombres_sectores: tuple = ("Sector A",
             est, p_str = "Aceptable", f"{p:.1f}%"
         reporte.append(f"| {nom:<18} | {p_str:<10} | {est:<12} |")
 
-    # Ranking ordenado
     ranking = sorted(datos_validos, key=lambda x: abs(x[1] - 50.0))
     reporte.append(linea)
     reporte.append("RANKING DE SECTORES (De mejor a peor):")
@@ -255,6 +232,6 @@ def menu(valores_actuales):
             case "4":
                 mostrar_sectores_ideales(valores_actuales)
             case "5":
-                generar_reporte_final(valores_actuales)
+                print(generar_reporte_final(valores_actuales))
             case _:
                 print("Opción inválida")

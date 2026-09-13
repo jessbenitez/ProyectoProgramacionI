@@ -56,7 +56,7 @@ def getValuesPerSector(matriz, sector_id): #fecive el nro de sector que el usuar
     return matriz[indiceSeleccionado]
 
 
-def orderHumidityValues(sector_id):
+def orderHumidityValues(st):
     """Retorna valores ordenados de mayor a menor (usar lambda)"""
     mediciones_validas = [v for v in sector_id if v != -1]
     return sorted(mediciones_validas, key=lambda x: x, reverse=True)

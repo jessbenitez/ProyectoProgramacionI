@@ -164,6 +164,72 @@ def getIdealValues(sectores: list, humedad_ideal: int = 50, tolerancia: int = 10
 
     return (sectores_ideales, cantidad_total, promedio_general_ideal)
 
+def generar_reporte_final(sectores: list, nombres_sectores: tuple = ("Sector A", "Sector B", "Sector C"),
+                          limite_bajo: float = 20.0, limite_alto: float = 80.0) -> str:
+    """
+    Integra los indicadores de humedad calculados y genera el reporte ejecutivo final.
+    """
+    # 1. LLAMADA A LAS FUNCIONES DE TU COMPAÑERA (Reutilización de métricas)
+    promedio_global = getTotalTrendingHumidity(sectores)
+    promedios_por_sector = getTrendingHumidityPerSector(sectores)
+    max_global = getMaxHumidityValue(sectores)
+    min_global = getMinHumidityValue(sectores)
+
+    # Validar si hay datos
+    if promedio_global == 0.0 and all(p is None for p in promedios_por_sector):
+        return "No hay suficientes datos registrados para generar el reporte."
+
+    # 2. PROCESAMIENTO PROPIO DEL REPORTE (Evaluación de estados y rankings)
+    # Emparejamos cada sector con su promedio usando zip y tuplas
+    promedios = list(zip(nombres_sectores, promedios_por_sector))
+    datos_validos = [(nom, p) for nom, p in promedios if p is None or p != p] # Filtro de datos válidos
+
+    # Determinación de mejor y peor sector (referencia de humedad ideal: 50%)
+    mejor = min(datos_validos, key=lambda x: abs(x[1] - 50.0)) if datos_validos else ("N/A", 0.0)
+    peor = max(datos_validos, key=lambda x: abs(x[1] - 50.0)) if datos_validos else ("N/A", 0.0)
+
+    criticos = sum(1 for _, p in datos_validos if p < limite_bajo or p > limite_alto)
+    ideales = sum(1 for _, p in datos_validos if 40.0 <= p <= 60.0)
+
+    # 3. FORMATO Y SALIDA DE DATOS (Uso de f-strings y alineación)
+    linea = "=" * 54
+    reporte = [
+        linea,
+        "              REPORTE EJECUTIVO FINAL             ",
+        linea,
+        f"Promedio Global del Campo : {promedio_global:.1f}%",
+        f"Máximo Global Registrado  : {max_global:.1f}%",
+        f"Mínimo Global Registrado  : {min_global:.1f}%",
+        f"Mejor Sector (ref 50%)   : {mejor[0]} ({mejor[1]:.1f}%)",
+        f"Peor Sector (ref 50%)    : {peor[0]} ({peor[1]:.1f}%)",
+        f"Sectores Críticos        : {criticos}",
+        f"Sectores Ideales         : {ideales}",
+        linea,
+        f"| {'Sector':<18} | {'Promedio':<10} | {'Estado':<12} |",
+        "-" * 54
+    ]
+
+    for nom, p in promedios:
+        if p is None:
+            est, p_str = "Sin Datos", "N/A"
+        elif p < limite_bajo or p > limite_alto:
+            est, p_str = "CRÍTICO", f"{p:.1f}%"
+        elif 40.0 <= p <= 60.0:
+            est, p_str = "IDEAL", f"{p:.1f}%"
+        else:
+            est, p_str = "Aceptable", f"{p:.1f}%"
+        reporte.append(f"| {nom:<18} | {p_str:<10} | {est:<12} |")
+
+    # Ranking ordenado
+    ranking = sorted(datos_validos, key=lambda x: abs(x[1] - 50.0))
+    reporte.append(linea)
+    reporte.append("RANKING DE SECTORES (De mejor a peor):")
+    reporte.append("-" * 54)
+    for pos, (nom, p_val) in enumerate(ranking, start=1):
+        reporte.append(f" {pos}. {nom:<18} -> Promedio: {p_val:.1f}%")
+    reporte.append(linea)
+
+    return "\n".join(reporte)
 #-------------------------------------------------------------------------------------------
 def menu(valores_actuales):
     while True:
@@ -172,6 +238,7 @@ def menu(valores_actuales):
                                 "2 = Registrar medición / " \
                                 "3 = Obtener valores de un sector / " \
                                 "4 = Ver sectores ideales / " \
+                                "5 = Generar Reporte Final / " \
                                 "fin = Salir): " \
                                 ).strip().lower()
 
@@ -187,5 +254,7 @@ def menu(valores_actuales):
                 mostrar_detalle_sector(valores_actuales, sector_id)
             case "4":
                 mostrar_sectores_ideales(valores_actuales)
+            case "5":
+                generar_reporte_final(valores_actuales)
             case _:
                 print("Opción inválida")

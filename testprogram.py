@@ -96,25 +96,6 @@ def getIdealValues(sectores, humedad_ideal: int = 50, tolerancia: int = 10):
 
 
 
-def generar_reporte_final(sectores):
-
-    #tiene que recorrer toda la matriz y acceder a cada lista y hacer la suma.. la suma de las 5 listas,
-    #hay que dividirlo entre las 5
-    
-
-    total = 0
-    for lista in sectores: #recorro la lista osea son 5 vueltas , de la matriz
-        print(lista), #devuelve cada una de las listas que forman la matriz NIVEL LISTA
-        cant_lista = len(sectores) #devuelve la cant de listas dentro de matriz
-        for valores in lista: #NIVEL ELEMENTO DENTRO DE LA LISTA, entra a cada elemento de la lista
-            if valores != -1:
-                sumar_valores = sum(lista) #suma de los elementos de una lista
-                print(sumar_valores)
-                total = sumar_valores + sumar_valores
-        print(total)
-#
-#
-
 
 
 # funcion pricipal--------------------------------------------------------------------------------------------------------------------------------------
@@ -142,62 +123,3 @@ print(f"Valores ideales(lista): {valores_ideales}")
 print(f"Cantidad total(cant elementos de la lista): {cantidad_total}")
 print(f"Promedio ideal: {promedio_ideal}")
 print("generar reporte", generar_reporte_final(matrizInicial))
-
-
-
-# ==============================================================================
-# 1. FUNCIONES FALSAS (MOCKS) 
-# Simulamos que son las funciones de Jessi para probar tu reporte de forma aislada
-# ==============================================================================
-def getTotalTrendingHumidity(sectores):
-    return 55.2  # Simulamos que calcula el promedio global
-
-def getMaxHumidityValue(sectores):
-    return 82.0  # Simulamos el máximo
-
-def getMinHumidityValue(sectores):
-    return 12.0  # Simulamos el mínimo
-
-def getTrendingHumidityPerSector(sectores):
-    return [45.3, 80.0, -1, 38.5, 68.2]  # Simulamos la lista de promedios por sector
-
-# ==============================================================================
-# 2. TU FUNCIÓN A PROBAR (generar_reporte_final)
-# ==============================================================================
-def generar_reporte_final(sectores: list, nombres_sectores: tuple, dias_semana: tuple) -> str:
-    """Arma el reporte ejecutivo consumiendo los datos."""
-    prom_global = getTotalTrendingHumidity(sectores)
-    max_global = getMaxHumidityValue(sectores)
-    min_global = getMinHumidityValue(sectores)
-    promedios_por_sector = getTrendingHumidityPerSector(sectores)
-    
-    reporte = []
-    reporte.append("=== REPORTE SEMANAL DE HUMEDAD EN CULTIVOS ===")
-    reporte.append("")
-    reporte.append("INDICADORES GENERALES:")
-    reporte.append(f"- Promedio del campo: {prom_global}%")
-    reporte.append(f"- Máximo global     : {max_global}%")
-    reporte.append(f"- Mínimo global     : {min_global}%")
-    reporte.append("")
-    reporte.append("PROMEDIO POR SECTOR:")
-    
-    for i, promedio in enumerate(promedios_por_sector):
-        nombre = nombres_sectores[i]
-        texto_prom = f"{promedio}%" if promedio != -1 else "N/A (sin mediciones)"
-        reporte.append(f"- {nombre}: {texto_prom}")
-        
-    return "\n".join(reporte)
-
-# ==============================================================================
-# 3. DATOS DE PRUEBA Y EJECUCIÓN
-# ==============================================================================
-# Datos de prueba simulados
-sectores_prueba = [[0]]  # Matriz ficticia (no importa el contenido porque usamos mocks)
-nombres_prueba = ("Sector A", "Sector B", "Sector C", "Sector D", "Sector E")
-dias_prueba = ("Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo")
-
-# Ejecutamos tu función y mostramos el resultado
-resultado = generar_reporte_final(sectores_prueba, nombres_prueba, dias_prueba)
-
-print("--- RESULTADO IMPRESO EN CONSOLA ---")
-print(resultado)

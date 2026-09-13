@@ -62,27 +62,142 @@ def orderHumidityValues(sector_id):
     return sorted(mediciones_validas, key=lambda x: x, reverse=True)
 
     
-#operaciones y funciones de la seccion priscila---------------------------------------------------------------------------------------------------------
+#operaciones y funciones de la seccion priscila---------------------------------------------------------------------------------
+def getIdealValues(sectores, humedad_ideal: int = 50, tolerancia: int = 10):
+    """Retorna (lista_sectores_ideales, cantidad_total, promedio_ideal)"""
+    min_ideal = humedad_ideal - tolerancia
+    max_ideal = humedad_ideal + tolerancia
 
-# def getValuesPerSector(sector_id):
-#     if not validar_sector(sector_id):
-#             id_sector = input("Ingrese el numero de sector: ")
-#             while not validar_sector(id_sector): #si el sector ingresado no es valido, se le vuelve a pedir al usuario que ingrese un sector valido
-#                 print("Sector inválido")
-#                 id_sector = input("Ingrese el numero de sector: ")
-#     return datos[sector_id]
+    sectores_ideales = []
+    suma_promedios = 0
+
+    for i, sector in enumerate(sectores):
+        valores_validos = [valor for valor in sector if valor != -1]
+        
+        if len(valores_validos) > 0:
+            promedio_sector = sum(valores_validos) / len(valores_validos)
+            
+            if min_ideal <= promedio_sector <= max_ideal:
+                print(f"El sector {NOMBRE_SECTORES[i]} tiene un promedio ideal de humedad: {promedio_sector}")
+                # Guardamos el sector encontrado
+                sectores_ideales.append(NOMBRE_SECTORES[i])
+                suma_promedios += promedio_sector
+            elif promedio_sector < min_ideal:
+                print(f"El sector {NOMBRE_SECTORES[i]} humedad baja: {promedio_sector}")
+
+    # --- FUERA DEL FOR ---
+    cantidad_total = len(sectores_ideales)
+    promedio_general = (suma_promedios / cantidad_total) if cantidad_total > 0 else 0
+
+    # Ahora sí retorna TODOS los sectores agrupados al finalizar
+    return sectores_ideales, cantidad_total, promedio_general
+    
+
+
+
+
+def generar_reporte_final(sectores):
+
+    #tiene que recorrer toda la matriz y acceder a cada lista y hacer la suma.. la suma de las 5 listas,
+    #hay que dividirlo entre las 5
+    
+
+    total = 0
+    for lista in sectores: #recorro la lista osea son 5 vueltas , de la matriz
+        print(lista), #devuelve cada una de las listas que forman la matriz NIVEL LISTA
+        cant_lista = len(sectores) #devuelve la cant de listas dentro de matriz
+        for valores in lista: #NIVEL ELEMENTO DENTRO DE LA LISTA, entra a cada elemento de la lista
+            if valores != -1:
+                sumar_valores = sum(lista) #suma de los elementos de una lista
+                print(sumar_valores)
+                total = sumar_valores + sumar_valores
+        print(total)
+#
+#
+
+
 
 # funcion pricipal--------------------------------------------------------------------------------------------------------------------------------------
-print("Bienvenido al programa de registro de humedad")
-print()
+# print("Bienvenido al programa de registro de humedad")
+# print()
 matrizInicial = cargar_datos_iniciales() # Carga los datos iniciales en la matriz
-print()
-print("Datos iniciales cargados:", matrizInicial) # Imprime los datos iniciales cargados
-print()
-#print(cargar_datos_iniciales()) # Imprime los datos iniciales cargados
-print()
+print(matrizInicial)
+# print()
+# print("Datos iniciales cargados:", matrizInicial) # Imprime los datos iniciales cargados
+# print()
+# #print(cargar_datos_iniciales()) # Imprime los datos iniciales cargados
+# print()
 print(mostrar_matriz(matrizInicial)) # Imprime la matriz creda con el formato
+# print()
+# print(getValuesPerSector(matrizInicial,2)) # Imprime los valores de un sector en especifico, lo indica el usuario
+# print()
+# print(orderHumidityValues(getValuesPerSector(matrizInicial,2))) # Imprime los valores ordenados de mayor a menor
+# print()
+# print(getIdealValues(matrizInicial)) # Imprime los valores ideales de cada sector
+
+
 print()
-print(getValuesPerSector(matrizInicial,2)) # Imprime los valores de un sector en especifico, lo indica el usuario
-print()
-print(orderHumidityValues(getValuesPerSector(matrizInicial,2))) # Imprime los valores ordenados de mayor a menor
+valores_ideales, cantidad_total, promedio_ideal = getIdealValues(matrizInicial)
+print(f"Valores ideales(lista): {valores_ideales}")
+print(f"Cantidad total(cant elementos de la lista): {cantidad_total}")
+print(f"Promedio ideal: {promedio_ideal}")
+print("generar reporte", generar_reporte_final(matrizInicial))
+
+
+
+# ==============================================================================
+# 1. FUNCIONES FALSAS (MOCKS) 
+# Simulamos que son las funciones de Jessi para probar tu reporte de forma aislada
+# ==============================================================================
+def getTotalTrendingHumidity(sectores):
+    return 55.2  # Simulamos que calcula el promedio global
+
+def getMaxHumidityValue(sectores):
+    return 82.0  # Simulamos el máximo
+
+def getMinHumidityValue(sectores):
+    return 12.0  # Simulamos el mínimo
+
+def getTrendingHumidityPerSector(sectores):
+    return [45.3, 80.0, -1, 38.5, 68.2]  # Simulamos la lista de promedios por sector
+
+# ==============================================================================
+# 2. TU FUNCIÓN A PROBAR (generar_reporte_final)
+# ==============================================================================
+def generar_reporte_final(sectores: list, nombres_sectores: tuple, dias_semana: tuple) -> str:
+    """Arma el reporte ejecutivo consumiendo los datos."""
+    prom_global = getTotalTrendingHumidity(sectores)
+    max_global = getMaxHumidityValue(sectores)
+    min_global = getMinHumidityValue(sectores)
+    promedios_por_sector = getTrendingHumidityPerSector(sectores)
+    
+    reporte = []
+    reporte.append("=== REPORTE SEMANAL DE HUMEDAD EN CULTIVOS ===")
+    reporte.append("")
+    reporte.append("INDICADORES GENERALES:")
+    reporte.append(f"- Promedio del campo: {prom_global}%")
+    reporte.append(f"- Máximo global     : {max_global}%")
+    reporte.append(f"- Mínimo global     : {min_global}%")
+    reporte.append("")
+    reporte.append("PROMEDIO POR SECTOR:")
+    
+    for i, promedio in enumerate(promedios_por_sector):
+        nombre = nombres_sectores[i]
+        texto_prom = f"{promedio}%" if promedio != -1 else "N/A (sin mediciones)"
+        reporte.append(f"- {nombre}: {texto_prom}")
+        
+    return "\n".join(reporte)
+
+# ==============================================================================
+# 3. DATOS DE PRUEBA Y EJECUCIÓN
+# ==============================================================================
+# Datos de prueba simulados
+sectores_prueba = [[0]]  # Matriz ficticia (no importa el contenido porque usamos mocks)
+nombres_prueba = ("Sector A", "Sector B", "Sector C", "Sector D", "Sector E")
+dias_prueba = ("Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo")
+
+# Ejecutamos tu función y mostramos el resultado
+resultado = generar_reporte_final(sectores_prueba, nombres_prueba, dias_prueba)
+
+print("--- RESULTADO IMPRESO EN CONSOLA ---")
+print(resultado)

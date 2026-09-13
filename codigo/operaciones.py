@@ -40,14 +40,14 @@ def registrar_medicion(valores_actuales):
             humedad = input("Ingrese la humedad: ")
 
         if valores_actuales[int(id_sector)][int(id_dia)] != -1:
-            raise ValueError("Ese valor ya fue registrado")
-
-        valores_actuales[int(id_sector)][int(id_dia)] = int(humedad)
+            print("Error: Ese valor ya fue registrado")
+        else:
+            valores_actuales[int(id_sector)][int(id_dia)] = int(humedad)
 
         return valores_actuales
 
-    except ValueError as error:
-        print(f"Error: {error}")
+    except:
+        print("Error: ocurrió un problema al registrar la medición")
         return valores_actuales
 
 def menu(valores_actuales):

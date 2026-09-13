@@ -4,11 +4,9 @@ import operaciones
 
 
 def main():
-    equipo = {
-        "nombres": ["Nicole Quilmore", "Jesica Benitez", "Priscila Challa"]
-    }
+    equipo = ("Nicole Quilmore", "Jesica Benitez", "Priscila Challa")
 
-    nombres_normalizados = perfil_equipo.normalizarNombres(equipo["nombres"])
+    nombres_normalizados = perfil_equipo.normalizarNombres(equipo)
 
     for nombre in nombres_normalizados:
         print(f"Integrante: {nombre}")

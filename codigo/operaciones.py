@@ -51,27 +51,35 @@ def registrar_medicion(valores_actuales):
         return valores_actuales
 
 
-# Reemplazar cuando estén listas las funciones definitivas
-
-def getTotalTrendingHumidity(sectores: list) -> float:
-    # Aca va a ir la logica de la funcion definitiva
-    return 53.4
-
-def getTrendingHumidityPerSector(sectores: list) -> list:
-    # Aca va a ir la logica de la funcion definitiva
-    # Devuelve un promedio ficticio para cada uno de los 5 sectores
-    return [59.3, 61.3, 73.8, 35.5, 47.6]
-
+# Indicacores -------------------------------------------------------------------------------------
 def getMaxHumidityValue(sectores: list) -> float:
-    # Aca va a ir la logica de la funcion definitiva
-    return 99.0
+    valores_validos = [val for fila in sectores for val in fila if val >= 0]
+    return float(max(valores_validos)) if valores_validos else -1.0
+
 
 def getMinHumidityValue(sectores: list) -> float:
-    # Aca va a ir la logica de la funcion definitiva
-    return 13.0
+    valores_validos = [val for fila in sectores for val in fila if val >= 0]
+    return float(min(valores_validos)) if valores_validos else -1.0
 
 
-#
+def getAverageHumidityPerSector(sectores: list) -> list:
+    promedios = []
+    for fila in sectores:
+        validos = [val for val in fila if val >= 0]
+        if validos:
+            promedios.append(sum(validos) / len(validos))
+        else:
+            promedios.append(-1.0)
+    return promedios
+
+
+def getAverageHumidityTotal(sectores: list) -> float:
+    valores_validos = [val for fila in sectores for val in fila if val >= 0]
+    if not valores_validos:
+        return -1.0
+    return sum(valores_validos) / len(valores_validos)
+
+#----------------------------------------------------------------------------------------------------------
 def pedir_sector_valido():
     sec_input = input("Ingrese el número de sector (1-5): ")
     
@@ -164,82 +172,75 @@ def getIdealValues(sectores: list, humedad_ideal: int = 50, tolerancia: int = 10
 
     return (sectores_ideales, cantidad_total, promedio_general_ideal)
 
-def generar_reporte_final(sectores: list, limite_bajo: float = 20.0, limite_alto: float = 80.0) -> str:
-    """Consume las métricas del sistema y construye el informe ejecutivo formateado."""
-    
-    promedio_global = getTotalTrendingHumidity(sectores)
-    promedios_por_sector = getTrendingHumidityPerSector(sectores)
+# H5 ------------------------------------------------------------------------------------------------------
+def getCriticalValues(sectores, limite_bajo=20, limite_alto=80) -> list:
+    """
+    Obtiene lista de sectores con humedad crítica (<20% o >80%).
+    """
+    # TODO: Jesica - Desarrollar la lógica definitiva usando comprensión de listas
+    # Retorna índices ficticios de ejemplo (ejemplo: Sector B que es índice 1)
+    return [1]
+
+
+def getIdealValues(sectores, ideal_bajo=40, ideal_alto=60) -> list:
+    """
+    Obtiene lista de sectores con humedad ideal (entre 40% y 60%).
+    """
+    # TODO: Jesica - Desarrollar la lógica definitiva usando comprensión de listas
+    # Retorna índices ficticios de ejemplo (ejemplo: Sector A que es índice 0 y Sector D que es índice 3)
+    return [0, 3]
+
+
+# HISTORIA H6: REPORTE FINAL-------------------------------------------------------------------------------------
+def generar_reporte_final(sectores: list, nombres_sectores: tuple, dias_semana: tuple) -> str:
+    """
+    Genera el reporte ejecutivo semanal consolidado en formato string.
+    """
+    promedio_global = getAverageHumidityTotal(sectores)
+    promedios_por_sector = getAverageHumidityPerSector(sectores)
     max_global = getMaxHumidityValue(sectores)
     min_global = getMinHumidityValue(sectores)
+    
+    # Consumo de las funciones de Jesica (H5)
+    indices_criticos = getCriticalValues(sectores)
+    indices_ideales = getIdealValues(sectores)
 
-    promedios = list(zip(NOMBRE_SECTORES, promedios_por_sector))
-
-    mejor = min(promedios, key=lambda x: abs(x[1] - 50.0))
-    peor = max(promedios, key=lambda x: abs(x[1] - 50.0))
-
-
-    criticos = sum(1 for _, p in promedios if p < limite_bajo or p > limite_alto)
-    ideales = sum(1 for _, p in promedios if 40.0 <= p <= 60.0)
-
-
-    linea = "=" * 72
     reporte = [
-        linea,
-        "                     REPORTE EJECUTIVO FINAL                      ",
-        linea,
-        f"Promedio Global del Campo : {promedio_global:.1f}%",
-        f"Máximo Global Registrado  : {max_global:.1f}%",
-        f"Mínimo Global Registrado  : {min_global:.1f}%",
-        f"Mejor Sector (ref 50%)    : {mejor[0]} ({mejor[1]:.1f}%)",
-        f"Peor Sector (ref 50%)     : {peor[0]} ({peor[1]:.1f}%)",
-        f"Sectores Críticos         : {criticos}",
-        f"Sectores Ideales          : {ideales}",
-        linea,
-        f"| {'Sector':<12} | {'Promedio':<8} | {'Estado':<10} | {'Gráfico (0-100%)':<14} |",
-        "-" * 72
+        "=== REPORTE SEMANAL DE HUMEDAD EN CULTIVOS ===",
+        "",
+        "INDICADORES GENERALES:",
+        f"- Promedio del campo: {promedio_global:.1f}%" if promedio_global >= 0 else "- Promedio del campo: N/A",
+        f"- Máximo: {max_global:.1f}%" if max_global >= 0 else "- Máximo: N/A",
+        f"- Mínimo: {min_global:.1f}%" if min_global >= 0 else "- Mínimo: N/A",
+        "",
+        "PROMEDIO POR SECTOR:"
     ]
 
-
-    for nom, p in promedios:
-        barra = generar_barra_ascii(p)
-        if p < limite_bajo or p > limite_alto:
-            est = "CRÍTICO"
-        elif 40.0 <= p <= 60.0:
-            est = "IDEAL"
+    for nombre, prom in zip(nombres_sectores, promedios_por_sector):
+        if prom < 0:
+            reporte.append(f"- {nombre}: N/A (sin mediciones)")
         else:
-            est = "Aceptable"
-            
-        reporte.append(f"| {nom:<12} | {p:.1f}%   | {est:<10} | [{barra}] |")
+            reporte.append(f"- {nombre}: {prom:.1f}%")
 
+    reporte.append("\nSECTORES CRÍTICOS (< 20% o > 80%):")
+    if indices_criticos:
+        for i in indices_criticos:
+            prom = promedios_por_sector[i]
+            prom_str = f" ({prom:.1f}%)" if prom >= 0 else " (N/A)"
+            reporte.append(f"- {nombres_sectores[i]}{prom_str}")
+    else:
+        reporte.append("- Ninguno")
 
-    ranking = sorted(promedios, key=lambda x: abs(x[1] - 50.0))
-    reporte.append(linea)
-    reporte.append("RANKING DE SECTORES (De mejor a peor según humedad ideal 50%):")
-    reporte.append("-" * 72)
-    for pos, (nom, p_val) in enumerate(ranking, start=1):
-        reporte.append(f" {pos}. {nom:<12} -> Promedio: {p_val:.1f}%")
-    reporte.append(linea)
+    reporte.append("\nSECTORES IDEALES (40-60%):")
+    if indices_ideales:
+        for i in indices_ideales:
+            prom = promedios_por_sector[i]
+            prom_str = f" ({prom:.1f}%)" if prom >= 0 else " (N/A)"
+            reporte.append(f"- {nombres_sectores[i]}{prom_str}")
+    else:
+        reporte.append("- Ninguno")
 
     return "\n".join(reporte)
-
-#--------------------------------------------codigo ascii------------------------------------------------
-def generar_barra_ascii(porcentaje, escala: int = 10, caracter_lleno: str = "█", caracter_vacio: str = "░") -> str:
-    if porcentaje is None or porcentaje != porcentaje:
-        return "N/A"
-    
-    try:
-        val = float(porcentaje)
-        val_clamped = max(0.0, min(100.0, val))
-        
-        # Con escala 10, el máximo de bloques es 10 (100 // 10 = 10)
-        bloques_llenos = int(val_clamped // escala)
-        bloques_vacios = 10 - bloques_llenos
-        
-        return (caracter_lleno * bloques_llenos) + (caracter_vacio * bloques_vacios)
-    except (ValueError, TypeError):
-        return "N/A"
-
-
 
 #------------------------------------------------------------------------------------------------------------------------------
 def menu(valores_actuales):
@@ -249,7 +250,7 @@ def menu(valores_actuales):
                                 "2 = Registrar medición / " \
                                 "3 = Obtener valores de un sector / " \
                                 "4 = Ver sectores ideales / " \
-                                "5 = Generar Reporte Final / " \
+                                "6 = Generar Reporte Final / " \
                                 "fin = Salir): " \
                                 ).strip().lower()
 
@@ -265,7 +266,9 @@ def menu(valores_actuales):
                 mostrar_detalle_sector(valores_actuales, sector_id)
             case "4":
                 mostrar_sectores_ideales(valores_actuales)
-            case "5":
-                print(generar_reporte_final(valores_actuales))
+            case "6":
+                reporte_texto = generar_reporte_final(valores_actuales, NOMBRE_SECTORES, DIAS_SEMANA)
+                print("\n" + reporte_texto)
+                input("\n¿Desea volver al menú? (Presione Enter): ")
             case _:
                 print("Opción inválida")

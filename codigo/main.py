@@ -28,7 +28,7 @@ def main():
 
     #A partir de este punto comenzamos a implementar el programa
     valores_actuales = cargar_datos_iniciales()
-
+    
     operaciones.menu(valores_actuales)
 
     
@@ -37,4 +37,3 @@ if __name__ == "__main__":
     main()
 
 
-print(operaciones.getValuesPerSector(0))

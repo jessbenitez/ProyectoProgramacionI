@@ -89,9 +89,14 @@ def pedir_sector_valido():
         
     return int(sec_input)
 
-def getValuesPerSector(valores_actuales, sector_id):
+
+
+def getValuesPerSector(sectores, id_sector):
+    return sectores[id_sector -1]
+
+"""def getValuesPerSector(valores_actuales, sector_id):
     posicion_sector = sector_id - 1
-    return valores_actuales[posicion_sector]
+    return valores_actuales[posicion_sector]"""
 
 def orderHumidityValues(sector_id):
     mediciones_validas = [v for v in sector_id if v != -1]
@@ -130,26 +135,41 @@ def pedir_rango_ideal() -> tuple:
     return 50, 10
 
 
-def mostrar_sectores_ideales(sectores: list):
+def mostrar_sectores_criticos(sectores: list, nombres_sectores: tuple):
+    promedios_por_sector = getAverageHumidityPerSector(sectores)
+    indices_criticos = getCriticalValues(promedios_por_sector)
+    print("\n--- Identificación de Sectores Críticos (< 20% o > 80%) ---")
+    if indices_criticos:
+        for i in range(len(indices_criticos)):
+            prom = indices_criticos[i]
+            prom_str = f" ({prom:.1f}%)" if prom >= 0 else " (N/A)"
+            print(f"- {nombres_sectores[i]}: {prom_str}")
+    else:
+        print(" No hay sectores con promedio que alcancen rango crítico.")
+
+
+def mostrar_sectores_ideales(sectores: list, nombres_sectores: tuple):
     print("\n--- Identificación de Zona Ideal ---")
     ideal_target, tolerancia = pedir_rango_ideal()
-    ideales, total, prom_general = getIdealValues(sectores, ideal_target, tolerancia)
     
     rango_min = ideal_target - tolerancia
     rango_max = ideal_target + tolerancia
 
-    print(f"\nSectores en Zona Ideal ({rango_min}% - {rango_max}%):")
-    if total > 0:
-        for nombre, prom in ideales:
-            barra = generar_barra_ascii(prom)
-            print(f" • {nombre:<12}: {prom:.1f}% [{barra}]")
-    else:
-        print(" No hay sectores con promedio dentro del rango ideal.")
+    promedios_por_sector = getAverageHumidityPerSector(sectores)
+    indices_ideales = getIdealValues(promedios_por_sector, float(rango_min), float(rango_max))
     
-    print(f"\nCantidad total de sectores ideales: {total}")
-    print(f"Promedio general de sectores ideales: {prom_general:.1f}%\n")
 
-def getIdealValues(sectores: list, humedad_ideal: int = 50, tolerancia: int = 10) -> tuple:
+    print(f"\nSectores en Zona Ideal ({rango_min}% - {rango_max}%):")
+    if indices_ideales:
+        for i in range(len(indices_ideales)):
+            prom = indices_ideales[i]
+            prom_str = f" ({prom:.1f}%)" if prom >= 0 else " (N/A)"
+            print(f"- {nombres_sectores[i]}: {prom_str}")
+    else:
+        print("No hay sectores con promedio dentro del rango ideal.")
+    
+
+def getIdealValues2(sectores: list, humedad_ideal: int = 50, tolerancia: int = 10) -> tuple:
     limite_inferior = humedad_ideal - tolerancia
     limite_superior = humedad_ideal + tolerancia
     
@@ -172,24 +192,47 @@ def getIdealValues(sectores: list, humedad_ideal: int = 50, tolerancia: int = 10
 
     return (sectores_ideales, cantidad_total, promedio_general_ideal)
 
+def getIdealValues(sectores, ideal_bajo = 40.0, ideal_alto = 60.0) -> list:
+    """
+    Obtiene lista de sectores con humedad ideal.
+
+    Rango: entre ideal_bajo e ideal_alto (40-60%)
+    Se calcula sobre el promedio del sector, excluyendo valores -1.
+    Los sectores sin mediciones no se consideran.
+
+    Retorna: Lista con índices de sectores ideales
+
+    Nota: Usa comprensión de listas
+    """
+    
+    lista_ideales = []
+
+    for valor in sectores:
+        if valor > ideal_bajo and valor < ideal_alto:
+            if valor not in lista_ideales:
+                lista_ideales.append(valor)
+    return lista_ideales
+
 # H5 ------------------------------------------------------------------------------------------------------
-def getCriticalValues(sectores, limite_bajo=20, limite_alto=80) -> list:
+def getCriticalValues(sectores, limite_bajo=20.0, limite_alto=80.0) -> list:
     """
     Obtiene lista de sectores con humedad crítica (<20% o >80%).
     """
     # TODO: Jesica - Desarrollar la lógica definitiva usando comprensión de listas
     # Retorna índices ficticios de ejemplo (ejemplo: Sector B que es índice 1)
-    return [1]
-
-
-def getIdealValues(sectores, ideal_bajo=40, ideal_alto=60) -> list:
     """
-    Obtiene lista de sectores con humedad ideal (entre 40% y 60%).
+    Qué hace: identifica qué sectores están en estado crítico.
+    Qué recibe: la matriz, y dos límites que tienen valor por defecto (20 y 80) pero podrían cambiarse al llamarla.
+    Qué devuelve: una lista de índices internos (0 a 4), no de IDs ni de nombres. Ejemplo: [0, 1, 4] significa sectores A, B y E. Si no hay críticos, lista vacía.
     """
-    # TODO: Jesica - Desarrollar la lógica definitiva usando comprensión de listas
-    # Retorna índices ficticios de ejemplo (ejemplo: Sector A que es índice 0 y Sector D que es índice 3)
-    return [0, 3]
 
+    lista_criticos = []
+    for valor in sectores:
+        if valor < limite_bajo or valor > limite_alto:
+            if valor not in lista_criticos:
+                lista_criticos.append(valor)
+    
+    return lista_criticos
 
 # HISTORIA H6: REPORTE FINAL-------------------------------------------------------------------------------------
 def generar_reporte_final(sectores: list, nombres_sectores: tuple, dias_semana: tuple) -> str:
@@ -202,8 +245,8 @@ def generar_reporte_final(sectores: list, nombres_sectores: tuple, dias_semana: 
     min_global = getMinHumidityValue(sectores)
     
     # Consumo de las funciones de Jesica (H5)
-    indices_criticos = getCriticalValues(sectores)
-    indices_ideales = getIdealValues(sectores)
+    indices_criticos = getCriticalValues(promedios_por_sector)
+    indices_ideales = getIdealValues(promedios_por_sector)
 
     reporte = [
         "=== REPORTE SEMANAL DE HUMEDAD EN CULTIVOS ===",
@@ -224,19 +267,19 @@ def generar_reporte_final(sectores: list, nombres_sectores: tuple, dias_semana: 
 
     reporte.append("\nSECTORES CRÍTICOS (< 20% o > 80%):")
     if indices_criticos:
-        for i in indices_criticos:
-            prom = promedios_por_sector[i]
+        for i in range(len(indices_criticos)):
+            prom = indices_criticos[i]
             prom_str = f" ({prom:.1f}%)" if prom >= 0 else " (N/A)"
-            reporte.append(f"- {nombres_sectores[i]}{prom_str}")
+            reporte.append(f"- {nombres_sectores[i]}: {prom_str}")
     else:
         reporte.append("- Ninguno")
 
     reporte.append("\nSECTORES IDEALES (40-60%):")
     if indices_ideales:
-        for i in indices_ideales:
-            prom = promedios_por_sector[i]
+        for i in range(len(indices_ideales)):
+            prom = indices_ideales[i]
             prom_str = f" ({prom:.1f}%)" if prom >= 0 else " (N/A)"
-            reporte.append(f"- {nombres_sectores[i]}{prom_str}")
+            reporte.append(f"- {nombres_sectores[i]}: {prom_str}")
     else:
         reporte.append("- Ninguno")
 
@@ -272,8 +315,9 @@ def menu(valores_actuales):
             case "3":
                 sector_id = pedir_sector_valido()
                 mostrar_detalle_sector(valores_actuales, sector_id)
+                mostrar_sectores_criticos(valores_actuales, NOMBRE_SECTORES)
             case "4":
-                mostrar_sectores_ideales(valores_actuales)
+                mostrar_sectores_ideales(valores_actuales, NOMBRE_SECTORES)
             case "5":
                 registrar_medicion(valores_actuales)
             case "6":

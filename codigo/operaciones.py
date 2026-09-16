@@ -167,30 +167,6 @@ def mostrar_sectores_ideales(sectores: list, nombres_sectores: tuple):
             print(f"- {nombres_sectores[i]}: {prom_str}")
     else:
         print("No hay sectores con promedio dentro del rango ideal.")
-    
-
-def getIdealValues2(sectores: list, humedad_ideal: int = 50, tolerancia: int = 10) -> tuple:
-    limite_inferior = humedad_ideal - tolerancia
-    limite_superior = humedad_ideal + tolerancia
-    
-    sectores_ideales = []
-    suma_promedios_ideales = 0
-    
-    for idx, fila in enumerate(sectores):
-        mediciones_validas = [val for val in fila if val != -1]
-        
-        if len(mediciones_validas) > 0:
-            promedio_sector = sum(mediciones_validas) / len(mediciones_validas)
-            
-            if limite_inferior <= promedio_sector <= limite_superior:
-                nombre = NOMBRE_SECTORES[idx]
-                sectores_ideales.append((nombre, promedio_sector))
-                suma_promedios_ideales += promedio_sector
-
-    cantidad_total = len(sectores_ideales)
-    promedio_general_ideal = (suma_promedios_ideales / cantidad_total) if cantidad_total > 0 else 0.0
-
-    return (sectores_ideales, cantidad_total, promedio_general_ideal)
 
 def getIdealValues(sectores, ideal_bajo = 40.0, ideal_alto = 60.0) -> list:
     """

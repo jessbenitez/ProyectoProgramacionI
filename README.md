@@ -50,10 +50,11 @@ python main.py
 📂 Estructura del Proyecto
 Plaintext
 proyecto/
-├── main.py           # Menú interactivo principal y control de flujo
-├── datos.py          # Constantes globales, tuplas inmutables y matriz base
-├── operaciones.py     # Lógica de cálculo, validaciones, alertas y reporte final
-└── README.md         # Documentación completa del proyecto
+├── main.py            # Menú interactivo, entrada/salida por consola y control de flujo
+├── datos.py           # Constantes globales, tuplas inmutables y matriz base (sin I/O)
+├── operaciones.py      # Lógica de cálculo, validaciones y formateo de resultados (sin I/O)
+├── perfil_equipo.py    # Funciones auxiliares sobre strings usadas al inicio del programa
+└── README.md          # Documentación completa del proyecto
 
 ⚙️ Funcionalidad Implementada por Módulo
 1. Perfil del equipo (perfil_equipo.py)
@@ -68,48 +69,54 @@ generarSigla: Genera una sigla con la inicial de cada palabra del nombre.
 contiene_digitos: Verifica si el nombre del equipo contiene al menos un dígito.
 
 2. Datos de humedad (datos.py)
-Constantes configurables: DIAS_SEMANA, NOMBRE_SECTORES y rangos de humedad (CRITICO_BAJO, IDEAL_BAJO, IDEAL_ALTO, CRITICO_ALTO).
+Constantes configurables: DIAS_SEMANA, NOMBRE_SECTORES (Frutillas, Frambuesas, Arándanos, Moras, Cerezas) y rangos de humedad (CRITICO_BAJO, IDEAL_BAJO, IDEAL_ALTO, CRITICO_ALTO).
 
-cargar_datos_iniciales: Genera la matriz inicial de humedad (5 sectores × 7 días) con valores iniciales o centinelas (-1).
+cargar_datos_iniciales: Genera la matriz inicial de humedad (5 sectores × 7 días). Solo una minoría de celdas (~30%) arranca con medición cargada; el resto queda en -1, para garantizar que siempre haya lugar para probar el registro de nuevas mediciones.
 
-mostrar_matriz: Imprime la matriz de humedad en formato de tabla (filas = sectores, columnas = días) mostrando el porcentaje correspondiente.
+formatear_matriz: Arma el string con la matriz de humedad en formato de tabla (filas = sectores, columnas = días), mostrando "Sin medición" en las celdas con -1. No imprime nada — el módulo no hace I/O; quien la imprime es `main.py`.
 
 3. Operaciones del sistema (operaciones.py)
-Validaciones: validar_sector, validar_dia y validar_humedad comprueban que las entradas del usuario sean numéricas y respeten los rangos permitidos (sectores 1-5, días 0-6, humedad 0-100%).
+Módulo de lógica pura: ninguna de sus funciones usa `input()` ni `print()`, ni depende de variables globales — todo lo que necesitan (nombres de sectores, días de la semana) se les pasa por parámetro.
 
-Consultas: getValuesPerSector y orderHumidityValues (utilizando expresiones lambda para el ordenamiento).
+Validaciones: validar_sector, validar_dia y validar_humedad comprueban que las entradas del usuario sean numéricas y respeten los rangos permitidos (sectores 1-5, días 0-6, humedad 0-100%). El ID de sector se maneja de forma consistente en todo el módulo: 1-5 de cara al usuario, y se resta 1 únicamente al indexar la matriz.
+
+Consultas: getValuesPerSector y orderHumidityValues (utilizando expresiones lambda para el ordenamiento, y slicing para quedarse con el top 3 de mediciones más altas de un sector).
 
 Indicadores: getMaxHumidityValue, getMinHumidityValue, getAverageHumidityPerSector y getAverageHumidityTotal (excluyendo celdas con centinela -1).
 
-Alertas: getCriticalValues y getIdealValues (implementados mediante comprensión de listas).
+Alertas: getCriticalValues y getIdealValues (implementados mediante comprensión de listas). El rango ideal es inclusivo: 40% y 60% se consideran ideales.
 
-Reporte y Registro: registrar_medicion y generar_reporte_final.
+Formateo de resultados: formatear_detalle_sector, formatear_sectores_criticos, formatear_sectores_ideales y generar_reporte_final devuelven el texto ya armado como string; es `main.py` quien lo imprime.
+
+Registro: registrar_medicion recibe sector, día y humedad ya validados, y devuelve la matriz actualizada junto con un resultado (éxito/error y mensaje) — no valida ni usa try/except, porque las entradas ya llegan validadas desde `main.py`.
 
 4. Menú interactivo (main.py)
 Presenta los datos del equipo formateados.
 
+Concentra toda la interacción con el usuario: pide los datos por consola (pedir_sector_valido, pedir_entero_positivo, pedir_rango_ideal, pedir_medicion) e imprime los resultados que calculan y formatean `operaciones.py` y `datos.py`.
+
 Despliega un menú repetitivo por consola con las siguientes opciones:
 
-Option 1: Consultar valores por sector.
+Opción 1: Consultar valores por sector (matriz completa).
 
-Option 2: Ver indicadores generales.
+Opción 2: Ver indicadores generales.
 
-Option 3: Ver sectores críticos (<20% o >80%).
+Opción 3: Ver sectores críticos (<20% o >80%).
 
-Option 4: Ver sectores ideales (40-60%).
+Opción 4: Ver sectores ideales (40-60%, inclusive).
 
-Option 5: Registrar nueva medición.
+Opción 5: Registrar nueva medición.
 
-Option 6: Generar reporte final.
+Opción 6: Generar reporte final.
 
-Option 0: Salir del programa.
+fin: Salir del programa (la salida es escribiendo "fin", no un número de opción).
 
 📊 Estructura de Datos
 Matriz 5×7: Representa 5 sectores (filas) por 7 días de la semana (columnas).
 
 Rango válido de humedad: Valores numéricos entre 0 y 100 (porcentaje).
 
-Valor especial -1: Centinela que indica un día sin medición cargada (se excluye de promedios y cálculos).
+Valor especial -1: Centinela que indica un día sin medición cargada (se excluye de promedios y cálculos, y se muestra como "Sin medición" en la matriz).
 
 🧪 Casos de Prueba Documentados
 Caso 1: Registrar medición válida
@@ -126,15 +133,15 @@ Resultado esperado: Rechazo con mensaje de error sin cerrar el programa.
 
 Caso 3: Consultar sector con datos completos
 
-Entrada: Sector 4 (Sector D).
+Entrada: Sector 4 (Moras).
 
 Resultado esperado: Muestra los 7 valores numéricos correspondientes a la semana.
 
 Caso 4: Consultar sector sin mediciones
 
-Entrada: Sector 3 (Sector C, inicializado con -1).
+Entrada: Sector 3 (Arándanos), sin mediciones cargadas.
 
-Resultado esperado: Muestra N/A (sin mediciones) en los días vacíos.
+Resultado esperado: Muestra "Sin registro" en los días sin medición.
 
 Caso 5: Ver indicadores generales
 
@@ -147,6 +154,24 @@ Resultado esperado: Filtra y muestra los sectores con mediciones <20% o >80%.
 Caso 7: Generar reporte final
 
 Resultado esperado: Imprime la hoja de reporte consolidada con indicadores, promedios y alertas.
+
+Caso 8: Casos de borde de humedad
+
+Entrada: Humedad = 0, Humedad = 100.
+
+Resultado esperado: Ambos se aceptan como válidos (0% suelo seco, 100% saturado).
+
+Caso 9: Casos de borde del rango ideal
+
+Entrada: Promedio de sector = 40%, Promedio de sector = 60%.
+
+Resultado esperado: Ambos se consideran dentro de la zona ideal (rango inclusivo).
+
+Caso 10: Sector fuera de rango
+
+Entrada: Sector = 0, Sector = 6.
+
+Resultado esperado: Rechazo con mensaje de error ("Sector inválido"), ya que los IDs válidos son 1 a 5.
 
 🧠 Decisiones de Diseño
 ¿Por qué una matriz 5×7? Permite una representación bidimensional limpia para modelar de forma directa la relación entre sectores de tierra y días de la semana.

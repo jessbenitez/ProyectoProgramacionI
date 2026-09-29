@@ -31,5 +31,3 @@ def contiene_digitos(texto):
         if caracter.isdigit():
             return True
     return False
-
-"comentario extra para subir ejercicio 9"

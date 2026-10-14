@@ -85,10 +85,9 @@ def formatear_sectores_criticos(sectores: list, nombres_sectores: tuple) -> str:
     indices_criticos = getCriticalValues(promedios_por_sector)
     lineas = ["\n--- Identificación de Sectores Críticos (< 20% o > 80%) ---"]
     if indices_criticos:
-        for i in range(len(indices_criticos)):
-            prom = indices_criticos[i]
-            prom_str = f" ({prom:.1f}%)" if prom >= 0 else " (N/A)"
-            lineas.append(f"- {nombres_sectores[i]}: {prom_str}")
+        for i in indices_criticos:
+            prom = promedios_por_sector[i]
+            lineas.append(f"- {nombres_sectores[i]}: ({prom:.1f}%)")
     else:
         lineas.append(" No hay sectores con promedio que alcancen rango crítico.")
     return "\n".join(lineas)
@@ -103,55 +102,43 @@ def formatear_sectores_ideales(sectores: list, nombres_sectores: tuple, ideal_ta
 
     lineas = ["\n--- Identificación de Zona Ideal ---", f"\nSectores en Zona Ideal ({rango_min}% - {rango_max}%):"]
     if indices_ideales:
-        for i in range(len(indices_ideales)):
-            prom = indices_ideales[i]
-            prom_str = f" ({prom:.1f}%)" if prom >= 0 else " (N/A)"
-            lineas.append(f"- {nombres_sectores[i]}: {prom_str}")
+        for i in indices_ideales:
+            prom = promedios_por_sector[i]
+            lineas.append(f"- {nombres_sectores[i]}: ({prom:.1f}%)")
     else:
         lineas.append("No hay sectores con promedio dentro del rango ideal.")
     return "\n".join(lineas)
 
-def getIdealValues(sectores, ideal_bajo = 40.0, ideal_alto = 60.0) -> list:
+def getIdealValues(promedios_por_sector, ideal_bajo = 40.0, ideal_alto = 60.0) -> list:
     """
-    Obtiene lista de sectores con humedad ideal.
+    Obtiene los índices de los sectores con humedad ideal.
 
-    Rango: entre ideal_bajo e ideal_alto (40-60%)
+    Rango: entre ideal_bajo e ideal_alto (40-60%, inclusive)
     Se calcula sobre el promedio del sector, excluyendo valores -1.
-    Los sectores sin mediciones no se consideran.
+    Los sectores sin mediciones (promedio -1) no se consideran.
 
-    Retorna: Lista con índices de sectores ideales
+    Retorna: Lista con índices (0 a 4) de los sectores ideales
 
     Nota: Usa comprensión de listas
     """
-
-    lista_ideales = []
-
-    for valor in sectores:
-        if valor >= ideal_bajo and valor <= ideal_alto:
-            if valor not in lista_ideales:
-                lista_ideales.append(valor)
-    return lista_ideales
+    return [i for i, valor in enumerate(promedios_por_sector) if valor >= ideal_bajo and valor <= ideal_alto]
 
 # H5 ------------------------------------------------------------------------------------------------------
-def getCriticalValues(sectores, limite_bajo=20.0, limite_alto=80.0) -> list:
+def getCriticalValues(promedios_por_sector, limite_bajo=20.0, limite_alto=80.0) -> list:
     """
-    Obtiene lista de sectores con humedad crítica (<20% o >80%).
-    """
-    # TODO: Jesica - Desarrollar la lógica definitiva usando comprensión de listas
-    # Retorna índices ficticios de ejemplo (ejemplo: Sector B que es índice 1)
-    """
-    Qué hace: identifica qué sectores están en estado crítico.
-    Qué recibe: la matriz, y dos límites que tienen valor por defecto (20 y 80) pero podrían cambiarse al llamarla.
-    Qué devuelve: una lista de índices internos (0 a 4), no de IDs ni de nombres. Ejemplo: [0, 1, 4] significa sectores A, B y E. Si no hay críticos, lista vacía.
-    """
+    Obtiene los índices de los sectores con humedad crítica (<20% o >80%).
 
-    lista_criticos = []
-    for valor in sectores:
-        if valor < limite_bajo or valor > limite_alto:
-            if valor not in lista_criticos:
-                lista_criticos.append(valor)
+    Qué recibe: una lista de promedios por sector, y dos límites con valor por defecto (20 y 80).
+    Qué devuelve: una lista de índices internos (0 a 4), no de IDs ni de nombres.
+    Ejemplo: [0, 1, 4] significa sectores A, B y E. Si no hay críticos, lista vacía.
+    Los sectores sin mediciones (promedio -1) no se consideran críticos.
 
-    return lista_criticos
+    Nota: Usa comprensión de listas
+    """
+    return [
+        i for i, valor in enumerate(promedios_por_sector)
+        if valor >= 0 and (valor < limite_bajo or valor > limite_alto)
+    ]
 
 # HISTORIA H6: REPORTE FINAL-------------------------------------------------------------------------------------
 def generar_reporte_final(sectores: list, nombres_sectores: tuple, dias_semana: tuple) -> str:
@@ -186,19 +173,17 @@ def generar_reporte_final(sectores: list, nombres_sectores: tuple, dias_semana: 
 
     reporte.append("\nSECTORES CRÍTICOS (< 20% o > 80%):")
     if indices_criticos:
-        for i in range(len(indices_criticos)):
-            prom = indices_criticos[i]
-            prom_str = f" ({prom:.1f}%)" if prom >= 0 else " (N/A)"
-            reporte.append(f"- {nombres_sectores[i]}: {prom_str}")
+        for i in indices_criticos:
+            prom = promedios_por_sector[i]
+            reporte.append(f"- {nombres_sectores[i]}: ({prom:.1f}%)")
     else:
         reporte.append("- Ninguno")
 
     reporte.append("\nSECTORES IDEALES (40-60%):")
     if indices_ideales:
-        for i in range(len(indices_ideales)):
-            prom = indices_ideales[i]
-            prom_str = f" ({prom:.1f}%)" if prom >= 0 else " (N/A)"
-            reporte.append(f"- {nombres_sectores[i]}: {prom_str}")
+        for i in indices_ideales:
+            prom = promedios_por_sector[i]
+            reporte.append(f"- {nombres_sectores[i]}: ({prom:.1f}%)")
     else:
         reporte.append("- Ninguno")
 

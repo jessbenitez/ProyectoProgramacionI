@@ -36,14 +36,14 @@ La Etapa 1 entregó un prototipo que vive **solo en memoria**: cada vez que se c
 | Aspecto en Etapa 1 | Limitación | Solución en Etapa 2 |
 |--------------------|-----------|---------------------|
 | Matriz 5×7 (`-1` = sin medición) | Solo cubre una semana; el centinela `-1` obliga a filtrar en cada cálculo; la posición (fila/columna) carga el significado | Lista de **diccionarios de registro** leídos desde CSV, con campos por nombre |
-| Datos iniciales aleatorios (`random`) | Cada ejecución arranca distinto; nada se conserva | **Carga desde `registros.csv`** al iniciar y escritura al registrar |
+| Datos iniciales aleatorios (`random`) | Cada ejecución arranca distinto; nada se conserva | **Carga desde `registros.csv`** al iniciar y reescritura del archivo al cerrar el programa |
 | Constantes en `datos.py` (sectores, días, límites) | Cambiar un límite exige editar código; son variables a nivel de módulo | **`configuracion.json`** leído a un diccionario que se pasa por parámetro |
 | Validaciones con `isnumeric()` y `range()` | Formatos acotados; `validar_humedad` acepta `-1` por el `range(-1, 101)`; no valida estructura de códigos ni fechas | **Expresiones regulares** + verificación contra configuración + **excepciones** |
 | Validaciones devuelven `True/False` | El llamador debe interpretar el booleano y no sabe *por qué* falló | Funciones que **lanzan excepciones** con mensaje del formato esperado |
-| Una medición cargada no se podía corregir (`registrar_medicion` rechazaba pisar una celda) | Un error de tipeo quedaba grabado para siempre | **Modificación de mediciones** con confirmación del usuario y persistencia en el CSV |
+| Una medición cargada no se podía corregir (`registrar_medicion` rechazaba pisar una celda) | Un error de tipeo quedaba grabado para siempre | **Modificación de mediciones** con confirmación del usuario; el cambio se persiste en el CSV al cerrar el programa |
 | Sin control de acceso | Cualquiera usa el sistema | **Login** contra `usuarios.json` |
 | Sin pruebas | No hay verificación automatizada | **`tests/test_*.py`** con pytest, un archivo por módulo de funciones |
-| Reporte solo por pantalla | No queda evidencia | **`reporte.txt`** / `alertas.txt` generados |
+| Reporte solo por pantalla | No queda evidencia | **Reportes en archivos de texto**, modularizados: uno por sector y uno general |
 
 ---
 
@@ -52,14 +52,14 @@ La Etapa 1 entregó un prototipo que vive **solo en memoria**: cada vez que se c
 | Contenido | Obligatorio | Aplicación en el proyecto |
 |-----------|:-----------:|---------------------------|
 | Expresiones regulares | ✅ | Validar fecha, código de sector, usuario y humedad (ver sección 7) |
-| Diccionarios | ✅ | Registro, acumulador por sector/fecha y configuración (reemplazan matriz y listas) |
+| Diccionarios | ✅ | Estructura principal en memoria (sector → fecha → humedad), acumuladores y configuración (reemplazan matriz y listas) |
 | Archivos CSV | ✅ | Persistencia del historial de mediciones (`registros.csv`) |
 | Excepciones | ✅ | Archivos inexistentes, formatos inválidos, errores de lectura/escritura |
 | Pruebas unitarias | ✅ | pytest, mínimo 7 pruebas, un archivo de pruebas por módulo |
 | Login de usuario y contraseña | ✅ | Validación contra `usuarios.json` |
 | Archivos JSON | Optativo (se implementa) | `configuracion.json` y `usuarios.json` |
-| Archivos de texto | Opcional (se implementa) | `reporte.txt` con alertas e incidencias |
-| Conjuntos | Optativo (se implementa) | Sectores y fechas únicos con medición |
+| Archivos de texto | Opcional (se implementa) | Reportes en `salida/reportes/` (un archivo por sector y uno general) con alertas e incidencias |
+| Conjuntos | Optativo (**no se implementa**) | — |
 | Recursividad | Optativo (**no se implementa**, ver sección 10) | — |
 
 ---
@@ -70,12 +70,13 @@ La Etapa 1 entregó un prototipo que vive **solo en memoria**: cada vez que se c
 
 1. **Login:** al iniciar, solicitar usuario y contraseña y validarlos contra `usuarios.json`. Máximo 3 intentos; luego el programa termina.
 2. **Carga de configuración** desde `configuracion.json` (sectores, límites críticos e ideales, archivos). Si falta o es inválido **no se reemplaza silenciosamente**: se informa el error y el programa no continúa.
-3. **Carga del historial** desde `registros.csv` al iniciar. Si el archivo no existe se crea con encabezado. Las filas incorrectas se informan (número de línea y motivo) sin perder las válidas.
-4. **Registro de mediciones** con fecha, sector y humedad, persistido en el CSV (modo *append*, mismo separador, encabezado y orden de campos). Si ya existe una medición para ese sector y fecha, no se pisa: se informa y se sugiere usar la opción de modificar.
-5. **Modificación de mediciones ya cargadas:** el usuario indica sector y fecha, el sistema muestra el valor actual, pide el nuevo valor (validado igual que en el registro) y solicita **confirmación** antes de reemplazarlo. El cambio se persiste en el CSV. Solo pueden modificarse mediciones dentro de la ventana de 28 días.
-6. **Consulta con filtros** por sector, por fecha y por rango de fechas.
-7. **Reportes:** filtrado, general, de alertas y resumen de únicos (ver sección 8).
-8. **Detección de condiciones críticas** sobre el historial completo, con generación de `reporte.txt`.
+3. **Carga del historial (una sola vez, al iniciar):** se lee `registros.csv` y se guarda en un **diccionario en memoria**. Cada fila se valida (formato, sector existente, fecha real y dentro de la ventana de 28 días, humedad en rango). Las filas incorrectas, duplicadas o fuera de la ventana se informan (número de línea y motivo) y **no se incorporan** al diccionario. Si el archivo no existe, se informa y se arranca con un historial vacío.
+4. **Registro de mediciones** con fecha, sector y humedad: se agrega al diccionario en memoria (no escribe el CSV en ese momento). Si ya existe una medición para ese sector y fecha, no se pisa: se informa y se sugiere usar la opción de modificar.
+5. **Modificación de mediciones ya cargadas:** el usuario indica sector y fecha, el sistema muestra el valor actual, pide el nuevo valor (validado igual que en el registro) y solicita **confirmación** antes de reemplazarlo en el diccionario en memoria. Solo pueden modificarse mediciones dentro de la ventana de 28 días.
+6. **Guardado al salir:** al finalizar la ejecución (opción `fin`), el contenido completo del diccionario **sobrescribe** `registros.csv`, de modo que los registros y modificaciones de la sesión persistan. Durante la ejecución todas las acciones (registrar, modificar, consultar, calcular) trabajan sobre el diccionario.
+7. **Consulta con filtros** por sector, por fecha y por rango de fechas.
+8. **Reportes:** filtrado, general y de alertas (ver sección 8).
+9. **Detección de condiciones críticas** sobre el historial completo, con generación de los archivos de reporte (uno por sector y uno general).
 
 ### 4.2 Funcionalidades de la Etapa 1 que se conservan
 
@@ -85,22 +86,33 @@ Se mantienen, adaptadas a la nueva estructura de datos: máximo, mínimo, promed
 
 ## 5. MODELO DE DATOS
 
-### 5.1 Registro de medición (diccionario)
+### 5.1 Diccionario principal de mediciones (en memoria)
 
-Cada fila del CSV se transforma en un diccionario con campos por nombre. Los tres valores del registro son homogéneos por campo (no hay listas ni matrices heterogéneas).
+Al iniciar, el CSV se carga en un diccionario anidado: **sector → fecha → humedad**. Es la única fuente de datos durante la ejecución y es lo que se vuelca al CSV al salir.
 
 ```python
-{"fecha": "2026-10-12", "sector": "S01", "humedad": 45.5}
+mediciones = {
+    "S01": {"2026-10-12": 45.5, "2026-10-13": 52.0},
+    "S02": {"2026-10-12": 79.0},
+    "S03": {},
+}
 ```
+
+- Cada fila del CSV (`fecha,sector,humedad`) se transforma en una entrada `mediciones[sector][fecha] = humedad`.
+- La unicidad (una medición por sector y fecha) queda garantizada por la propia estructura: no pueden existir dos claves iguales.
+- Registrar es agregar una clave; modificar es reemplazar el valor de una clave existente; consultar por sector es un acceso directo.
+- Los valores son homogéneos (todas las claves interiores son fechas y todos los valores son números), sin listas ni matrices heterogéneas.
 
 ### 5.2 Diccionarios acumuladores
 
-```python
-# Humedades agrupadas por sector (clave = código de sector)
-{"S01": [45.5, 52.0], "S02": [79.0], "S03": []}
+Se calculan a partir del diccionario principal:
 
-# Promedio por fecha (clave = fecha ISO)
-{"2026-10-12": 58.3, "2026-10-13": 61.0}
+```python
+# Promedio por sector (clave = código de sector)
+{"S01": 48.75, "S02": 79.0}
+
+# Promedio por fecha (clave = fecha ISO); resulta de reagrupar el diccionario principal
+{"2026-10-12": 62.25, "2026-10-13": 52.0}
 ```
 
 ### 5.3 Diccionario de configuración
@@ -126,24 +138,16 @@ Cargado desde `configuracion.json`:
   "archivos": {
     "registros": "datos/registros.csv",
     "usuarios": "datos/usuarios.json",
-    "reporte": "salida/reporte.txt"
+    "carpeta_reportes": "salida/reportes"
   }
 }
 ```
 
-### 5.4 Conjuntos
-
-```python
-sectores_con_medicion = {r["sector"] for r in registros}   # sectores distintos con datos
-fechas_con_medicion   = {r["fecha"] for r in registros}    # días distintos con datos
-sectores_sin_medicion = set(config["sectores"]) - sectores_con_medicion
-```
-
-### 5.5 Qué reemplaza a qué
+### 5.4 Qué reemplaza a qué
 
 | Etapa 1 | Etapa 2 |
 |---------|---------|
-| Matriz `sectores[5][7]` | Lista de diccionarios de registro (`fecha`, `sector`, `humedad`) |
+| Matriz `sectores[5][7]` | Diccionario anidado en memoria `mediciones[sector][fecha] = humedad`, cargado desde CSV |
 | Centinela `-1` | Ausencia de registro (no existe la fila) |
 | Tupla `NOMBRE_SECTORES` y constantes de límites | Diccionario de configuración (JSON) |
 | ID de sector 1-5 | Código `S01`-`S05`, validado por regex y contra la configuración |
@@ -152,7 +156,7 @@ sectores_sin_medicion = set(config["sectores"]) - sectores_con_medicion
 > **Decisión de diseño: ventana de 4 semanas.** Al pasar a fechas reales, el límite deja de ser "una semana de 7 días" y pasa a ser una **ventana móvil de 4 semanas (28 días) hacia atrás desde la fecha actual**, equivalente a un mes de historial. El valor se define en `configuracion.json` (`ventana_dias: 28`) y no en el código.
 > - **Registro:** solo se aceptan fechas dentro de la ventana (entre hoy menos 27 días y hoy). No se permiten fechas futuras ni anteriores a la ventana.
 > - **Consultas, indicadores y reportes:** operan solo sobre los registros dentro de la ventana.
-> - **CSV:** las filas más antiguas que la ventana **no se borran** del archivo; simplemente quedan fuera de los cálculos. Así no se pierde información histórica.
+> - **CSV:** las filas más antiguas que la ventana se informan al cargar y **no se incorporan** al diccionario en memoria; como el archivo se sobrescribe desde el diccionario al salir, **desaparecen del CSV**. El archivo conserva, entonces, solo las últimas 4 semanas (ver riesgos en sección 20).
 
 **Se debe validar que los datos que se carguen pertenezcan a esta ventana, tanto si son cargados por el usuario o por el csv**
 
@@ -164,16 +168,18 @@ sectores_sin_medicion = set(config["sectores"]) - sectores_con_medicion
 |---------|---------|-----------|:----------------:|
 | `datos/configuracion.json` | JSON | Sectores, límites y rutas | ❌ Obligatorio, error si falta o es inválido |
 | `datos/usuarios.json` | JSON | Usuarios y contraseñas para el login | ❌ Obligatorio |
-| `datos/registros.csv` | CSV (`fecha,sector,humedad`) | Historial de mediciones | ✅ Con encabezado |
-| `salida/reporte.txt` | Texto | Alertas, resumen e incidencias legibles | ✅ Se sobrescribe en cada generación |
+| `datos/registros.csv` | CSV (`fecha,sector,humedad`) | Historial de mediciones | ✅ Se crea al salir si no existía (con encabezado) |
+| `salida/reportes/reporte_S01.txt` ... `reporte_S05.txt` | Texto | Un archivo por sector: mediciones, indicadores y alertas del sector | ✅ La carpeta y los archivos se crean si faltan; se sobrescriben en cada generación |
+| `salida/reportes/reporte_general.txt` | Texto | Indicadores de todo el campo, alertas consolidadas | ✅ Ídem |
 | `tests/test_*.py` | Python | Pruebas automatizadas | — |
 
 **Reglas de persistencia:**
 - Todos los archivos se abren indicando `encoding="utf-8"` y el modo adecuado (`r`, `a`, `w`), con `newline=""` en CSV.
 - La escritura respeta siempre el mismo separador (`,`), encabezado y orden de campos.
-- **Registrar** agrega una fila al final (modo `a`). **Modificar** obliga a reescribir el archivo (modo `w`), porque CSV no permite editar una fila en el lugar: se leen **todas** las filas del archivo, se reemplaza la humedad de la fila que coincide en sector y fecha, y se escribe todo de nuevo con el mismo encabezado y orden. Las filas anteriores a la ventana y las filas inválidas **se conservan tal cual** (nunca se pierde información por modificar otra fila). 
-De ser posible de implementar: Para no corromper el archivo si falla la escritura, se escribe primero en un archivo temporal y luego se reemplaza el original.
-- Los registros inválidos dentro del CSV se reportan (línea y motivo) sin descartar los válidos.
+- **Lectura una sola vez, escritura una sola vez:** el CSV se lee al iniciar y se sobrescribe al salir (modo `w`) con el contenido del diccionario en memoria. Registrar y modificar **no tocan el archivo** durante la ejecución.
+- **Escritura directa (decisión de alcance):** el archivo se pisa directamente, sin archivo temporal ni copia de respaldo. Se acepta como limitación que una falla durante la escritura pueda dejar el archivo incompleto.
+- **Orden determinista:** al guardar, las filas se escriben ordenadas por fecha y luego por sector, con el mismo encabezado y orden de campos.
+- Los registros inválidos o fuera de la ventana se reportan al cargar (línea y motivo), sin descartar los válidos. Como no se incorporan a memoria, **no se reescriben** al guardar.
 - **Contraseñas:** se propone guardarlas como hash (`hashlib.sha256`) en `usuarios.json` en lugar de texto plano. Si el equipo prefiere simplicidad, se documenta como limitación.
 
 Ejemplo de `usuarios.json`:
@@ -211,10 +217,25 @@ La regex valida **estructura**; después se verifica coherencia (pertenencia a l
 
 | Reporte | Contenido mínimo | Salida |
 |---------|------------------|--------|
-| **Filtrado** | Mediciones de una fecha, un sector o un rango, con promedio del filtro | Pantalla y `reporte.txt` |
-| **General** | Máximo, mínimo, promedio total, promedio por sector y por fecha sobre todo el historial | Pantalla y `reporte.txt` |
-| **Alertas** | Mediciones y sectores críticos (<20% o >80%) con fecha y valor | `reporte.txt` |
-| **Resumen de únicos** | Cantidad y listado de sectores y fechas con medición, y sectores sin medición (conjuntos) | Pantalla y `reporte.txt` |
+| **Filtrado** | Mediciones de una fecha, un sector o un rango, con promedio del filtro | Pantalla |
+| **General** | Máximo, mínimo, promedio total, promedio por sector y por fecha sobre todo el historial | Pantalla y `reporte_general.txt` |
+| **Alertas** | Mediciones y sectores críticos (<20% o >80%) con fecha y valor | Sección de alertas de cada `reporte_<sector>.txt` y consolidado en `reporte_general.txt` |
+
+### 8.1 Reportes en archivos de texto: uno por sector
+
+La salida a texto no es un único archivo sino un conjunto modular dentro de `salida/reportes/`, de modo que cada sector pueda consultarse de forma independiente:
+
+| Archivo | Contenido |
+|---------|-----------|
+| `reporte_S01.txt` ... `reporte_S05.txt` | Nombre del sector, período cubierto (ventana de 28 días), mediciones ordenadas por fecha, máximo, mínimo, promedio y estado (crítico / ideal / otro), y **alertas del sector** (fecha y valor de cada medición crítica) |
+| `reporte_general.txt` | Indicadores de todo el campo (máximo, mínimo, promedio total), promedio por sector, **alertas consolidadas** (sectores con mediciones críticas) y los sectores sin mediciones |
+
+Reglas:
+- Se genera un archivo por **cada sector de la configuración**, incluso si no tiene mediciones (el archivo indica "Sin mediciones en el período"). Así agregar un sector al JSON crea su reporte sin cambiar código.
+- Nombre de archivo basado en el **código** del sector (`S01`), no en el nombre, para evitar acentos y espacios.
+- La carpeta `salida/reportes/` se crea si no existe; los archivos se sobrescriben en cada generación, y el encabezado incluye la fecha de generación.
+- El contenido se arma como string en `reportes.py` (sin I/O) y `archivos.py` lo escribe, manteniendo la separación entre lógica y acceso a archivos.
+- Un error al escribir un archivo (`OSError`) se informa indicando cuál falló y se continúa con los demás.
 
 ---
 
@@ -226,17 +247,17 @@ La regex valida **estructura**; después se verifica coherencia (pertenencia a l
 |-----------|-----------|-------------|
 | `configuracion.json` ausente | `FileNotFoundError` | Mensaje claro y fin del programa |
 | JSON mal formado o claves faltantes | `json.JSONDecodeError` / `KeyError` | Mensaje y fin del programa |
-| `registros.csv` ausente | `FileNotFoundError` | Se crea con encabezado y se continúa |
-| Fila de CSV inválida | `ValueError` (propia o estándar) | Se informa línea y motivo, se omite la fila |
+| `registros.csv` ausente | `FileNotFoundError` | Se informa y se arranca con historial vacío; el archivo se crea al salir |
+| Fila de CSV inválida, duplicada o fuera de la ventana | `ValueError` (propia o estándar) | Se informa línea y motivo, no se incorpora a memoria |
 | Error de lectura/escritura | `OSError` / `PermissionError` | Mensaje y vuelta al menú |
 | Formato de dato inválido | `ValueError` con formato esperado | Reintento sin cerrar el programa |
 | Login fallido | Excepción propia o `ValueError` | Reintento, máximo 3 |
 | Medición duplicada al registrar (mismo sector y fecha) | `ValueError` | Mensaje que sugiere usar "Modificar medición" y vuelta al menú |
 | Modificar una medición inexistente (sector y fecha sin registro) | `ValueError` | Mensaje y vuelta al menú |
-| Falla al reescribir el CSV al modificar | `OSError` | Mensaje; el archivo original queda intacto (escritura vía temporal) |
+| Falla al guardar el CSV al salir | `OSError` / `PermissionError` | Mensaje claro; se ofrece reintentar o salir sin guardar (los datos siguen en memoria mientras no se salga) |
 | Fecha fuera de la ventana de 28 días | `ValueError` con el rango permitido | Reintento sin cerrar el programa |
 
-> **Regla de unicidad (decisión nueva):** un sector admite **una medición por fecha**. A diferencia de la Etapa 1, donde una celda cargada era definitiva, ahora la medición existente puede corregirse, pero **solo mediante la opción explícita de modificar** y con confirmación. Registrar nunca pisa un valor en silencio.
+> **Regla de unicidad (decisión nueva):** un sector admite **una medición por fecha**. A diferencia de la Etapa 1, donde una celda cargada era definitiva, ahora la medición existente puede corregirse, pero **solo mediante la opción explícita de modificar** y con confirmación. Registrar nunca pisa un valor en silencio. Como el diccionario usa `sector → fecha` como clave, la unicidad es inherente a la estructura.
 
 ---
 
@@ -255,7 +276,7 @@ proyecto_etapa2/
 ├── main.py                  # Login, menú y control de flujo (único módulo con input/print)
 ├── validaciones.py          # Regex y validaciones; lanzan excepciones
 ├── operaciones.py           # Cálculos, filtros, acumuladores, detección crítica
-├── reportes.py              # Armado de reportes como strings y generación de reporte.txt
+├── reportes.py              # Armado de reportes como strings (por sector y general)
 ├── archivos.py              # Lectura/escritura de CSV, JSON y texto; manejo de errores de E/S
 ├── autenticacion.py         # Login contra usuarios.json
 ├── perfil_equipo.py         # Se conserva de Etapa 1
@@ -264,7 +285,9 @@ proyecto_etapa2/
 │   ├── usuarios.json
 │   └── registros.csv        # Datos de demostración
 ├── salida/
-│   └── reporte.txt
+│   └── reportes/
+│       ├── reporte_S01.txt     # Un archivo por sector (S01 a S05)
+│       └── reporte_general.txt
 ├── tests/
 │   ├── test_validaciones.py
 │   ├── test_operaciones.py
@@ -287,12 +310,12 @@ proyecto_etapa2/
 
 | Función Etapa 1 | Cambio |
 |-----------------|--------|
-| `getMaxHumidityValue`, `getMinHumidityValue` | Reciben lista de registros; ya no filtran `-1` |
-| `getAverageHumidityPerSector`, `getAverageHumidityTotal` | Devuelven diccionario por sector / promedio sobre registros |
-| `getValuesPerSector` | Filtra registros por código de sector |
-| `orderHumidityValues` | Se mantiene `lambda`, ahora ordena registros por `humedad` |
+| `getMaxHumidityValue`, `getMinHumidityValue` | Reciben el diccionario de mediciones; ya no filtran `-1` |
+| `getAverageHumidityPerSector`, `getAverageHumidityTotal` | Devuelven diccionario por sector / promedio sobre todas las mediciones |
+| `getValuesPerSector` | Devuelve las mediciones de un código de sector (`mediciones[sector]`) |
+| `orderHumidityValues` | Se mantiene `lambda`, ahora ordena las mediciones por humedad |
 | `getCriticalValues`, `getIdealValues` | Reciben límites desde configuración; se mantienen las comprensiones. Pendiente de la devolución de Etapa 1: revisar su lógica |
-| `registrar_medicion` | Valida, agrega el registro y lo persiste en CSV; lanza excepción ante duplicado (ya no devuelve tupla de resultado) |
+| `registrar_medicion` | Valida y agrega la medición al diccionario en memoria; lanza excepción ante duplicado (ya no devuelve tupla de resultado) |
 | `validar_sector`, `validar_dia`, `validar_humedad` | Pasan a `validaciones.py`, usan regex y lanzan excepciones; `validar_dia` se reemplaza por `validar_fecha` |
 | `generar_reporte_final` | Se divide en los cuatro reportes de la sección 8 |
 
@@ -300,11 +323,11 @@ proyecto_etapa2/
 
 | Módulo | Funciones |
 |--------|-----------|
-| `archivos.py` | `cargar_configuracion`, `cargar_registros`, `guardar_registro`, `actualizar_registro` (reescribe el CSV conservando el resto de las filas), `guardar_reporte` |
+| `archivos.py` | `cargar_configuracion`, `cargar_registros` (CSV → diccionario, informando filas rechazadas), `guardar_registros` (diccionario → CSV, sobrescribe el archivo), `guardar_reporte` (escribe un archivo de texto y crea la carpeta si falta) |
 | `autenticacion.py` | `cargar_usuarios`, `validar_credenciales` |
-| `operaciones.py` | `buscar_medicion` (devuelve el registro de un sector y fecha, o lanza excepción), `modificar_medicion`, `agrupar_por_sector`, `agrupar_por_fecha`, `filtrar_registros`, `obtener_sectores_unicos`, `obtener_fechas_unicas` |
+| `operaciones.py` | `buscar_medicion` (devuelve la humedad de un sector y fecha, o lanza excepción), `modificar_medicion`, `agrupar_por_fecha` (reagrupa el diccionario por fecha), `filtrar_registros` (por sector, fecha o rango) |
 | `validaciones.py` | `validar_fecha`, `validar_codigo_sector`, `validar_humedad`, `validar_usuario` |
-| `reportes.py` | `reporte_filtrado`, `reporte_general`, `reporte_alertas`, `reporte_unicos` |
+| `reportes.py` | `reporte_filtrado`, `reporte_sector` (mediciones, indicadores y alertas de un sector), `reporte_general`, `reporte_alertas` |
 
 ---
 
@@ -320,12 +343,12 @@ proyecto_etapa2/
 | 1 | Validación correcta | `validar_fecha("2026-10-12")` no lanza excepción |
 | 2 | Validación incorrecta con excepción | `validar_fecha("2026-02-30")` lanza `ValueError` |
 | 3 | Cálculo simple con resultado conocido | Promedio de `[40, 60]` = `50.0` |
-| 4 | Acumulación o agrupación por clave | `agrupar_por_sector` devuelve el diccionario esperado |
+| 4 | Acumulación o agrupación por clave | `agrupar_por_fecha` devuelve el diccionario esperado a partir de un diccionario de mediciones conocido |
 | 5 | Detección de condición crítica | Humedad `15` y `85` detectadas como críticas |
-| 6 | Regla del negocio con persistencia | `modificar_medicion` cambia solo la fila indicada y rechaza una medición inexistente |
+| 6 | Regla del negocio con persistencia | `modificar_medicion` cambia solo la medición indicada y rechaza una medición inexistente |
 | 7 | Caso límite | Lista vacía, humedad exactamente igual a `20`, `40`, `60`, `80`, y fecha exactamente en el borde de la ventana (hoy y hoy menos 27 días aceptadas; hoy menos 28 días rechazada) |
 
-Pruebas adicionales previstas: CSV inexistente, fila inválida omitida, login válido e inválido, `configuracion.json` inválido, y para la modificación: modificar una medición existente cambia solo esa fila en el CSV, modificar una inexistente lanza excepción, registrar un duplicado lanza excepción, y modificar conserva las filas anteriores a la ventana.
+Pruebas adicionales previstas: `reporte_sector` incluye las alertas del sector y solo las de ese sector, un sector sin mediciones genera su reporte con la leyenda correspondiente, `guardar_reporte` crea la carpeta si falta, CSV inexistente, fila inválida omitida, login válido e inválido, `configuracion.json` inválido, y para la persistencia: guardar con `guardar_registros` y volver a leer con `cargar_registros` devuelve el mismo diccionario (ida y vuelta), una fila fuera de la ventana no se incorpora al cargar, una fila duplicada no pisa a la primera, registrar un duplicado lanza excepción y modificar una medición inexistente lanza excepción.
 
 ---
 
@@ -343,9 +366,8 @@ Usuario: nicole
 6. Ver sectores ideales
 7. Reporte filtrado
 8. Reporte general
-9. Reporte de alertas (genera reporte.txt)
-10. Resumen de únicos
-fin. Salir
+9. Generar reportes en archivos (uno por sector + general)
+fin. Salir (guarda los cambios en registros.csv)
 ```
 
 Flujo de "Modificar medición existente":
@@ -356,7 +378,7 @@ Fecha (AAAA-MM-DD): 2026-10-12
 Medición actual: Frutillas, 2026-10-12 -> 45.5%
 Nuevo valor de humedad (0-100): 52
 ¿Reemplazar 45.5% por 52.0%? (s/n): s
-Medición modificada correctamente.
+Medición modificada correctamente (se guardará en el archivo al salir).
 ```
 
 ---
@@ -365,10 +387,10 @@ Medición modificada correctamente.
 
 `registros.csv` incluirá datos suficientes para probar filtros, reportes y alertas:
 - Fechas distribuidas en las **4 semanas** de la ventana. Como la ventana es móvil, el equipo prepara una forma de regenerar el CSV de demostración con fechas relativas a la fecha de ejecución (o usa una fecha de referencia inyectable por parámetro en las pruebas).
-- Al menos **un registro anterior a la ventana**, para demostrar que se conserva en el archivo pero queda fuera de los reportes.
-- Los **5 sectores** con distinta cantidad de mediciones, y al menos **un sector sin ninguna** (para el resumen de únicos).
+- Al menos **un registro anterior a la ventana**, para demostrar que se informa al cargar, no entra en los cálculos y no se reescribe al guardar.
+- Los **5 sectores** con distinta cantidad de mediciones, y al menos **un sector sin ninguna** (para probar el reporte de un sector sin mediciones).
 - Valores críticos bajos, críticos altos, ideales y **valores límite** (20, 40, 60, 80).
-- Al menos **una fila inválida** en una copia aparte (`registros_con_errores.csv`) para demostrar el manejo de errores sin perder las filas válidas.
+- Al menos **una fila inválida** en una copia aparte (`registros_con_errores.csv`) para demostrar el manejo de errores sin perder las filas válidas (las inválidas se informan y no se reescriben al guardar). Se incluye también un caso de dos filas con el mismo sector y fecha.
 
 ---
 
@@ -380,10 +402,10 @@ Alineados con la lista de control y la rúbrica de los lineamientos.
 |---|----------|---------|
 | 1 | El sistema recupera la información de ejecuciones anteriores | CSV (20%) |
 | 2 | La configuración se lee desde JSON y no se reemplaza silenciosamente | CSV/JSON/texto (20%) |
-| 3 | Los registros se leen y escriben en CSV con formato constante | CSV/JSON/texto (20%) |
+| 3 | Los registros se leen del CSV al iniciar y se escriben al salir, con formato constante | CSV/JSON/texto (20%) |
 | 4 | Se genera al menos un archivo de texto | CSV/JSON/texto (20%) |
-| 4b | Se puede modificar una medición ya cargada, con confirmación, y el cambio persiste en el CSV sin perder otras filas | CSV/JSON/texto (20%) |
-| 5 | Diccionarios (registro, acumulador, configuración) y conjuntos usados de forma visible y justificada | Diccionarios y conjuntos (15%) |
+| 4b | Se puede modificar una medición ya cargada, con confirmación, y el cambio persiste en el CSV al salir | CSV/JSON/texto (20%) |
+| 5 | Diccionarios (mediciones, acumuladores, configuración) usados de forma visible y justificada | Diccionarios y conjuntos (15%) |
 | 6 | Al menos dos validaciones con regex y mensajes que explican el formato esperado | Regex (10%) |
 | 7 | Errores de archivos y formatos controlados con excepciones | Excepciones (10%) |
 | 8 | Reportes filtrado, general y de alertas funcionando | Reportes (15%) |
@@ -400,13 +422,13 @@ Alineados con la lista de control y la rúbrica de los lineamientos.
 
 | Historia | Descripción | Responsable | Depende de |
 |----------|-------------|-------------|-----------|
-| **H1** | Reestructurar proyecto: nuevas carpetas y módulos, `configuracion.json`, `archivos.py` (config, carga y guardado de CSV), datos de demostración | Nicole | — |
-| **H2** | `validaciones.py` con regex y excepciones; adaptar `registrar_medicion` con persistencia; implementar modificación de mediciones (`buscar_medicion`, `modificar_medicion`, `actualizar_registro`); migrar las validaciones de Etapa 1; `test_validaciones.py` y `test_archivos.py` | Nicole | H1 |
+| **H1** | Reestructurar proyecto: nuevas carpetas y módulos, `configuracion.json`, `archivos.py` (config, carga de CSV a diccionario y guardado del diccionario a CSV), datos de demostración | Nicole | — |
+| **H2** | `validaciones.py` con regex y excepciones; adaptar `registrar_medicion` al diccionario en memoria; implementar modificación de mediciones (`buscar_medicion`, `modificar_medicion`); migrar las validaciones de Etapa 1; `test_validaciones.py` y `test_archivos.py` | Nicole | H1 |
 | **H3** | Login: `autenticacion.py`, `usuarios.json`, límite de intentos; `test_autenticacion.py` | Nicole | H1 |
-| **H4** | Adaptar consultas y alertas a diccionarios: `getValuesPerSector`, `orderHumidityValues`, `getCriticalValues`, `getIdealValues`, `filtrar_registros`; conjuntos de únicos; `test_operaciones.py` (parte consultas) | Jesica | H1 |
-| **H5** | Adaptar indicadores a diccionarios: máximo, mínimo, promedios, `agrupar_por_sector`, `agrupar_por_fecha`; `test_operaciones.py` (parte indicadores) | Priscila | H1 |
-| **H6** | `reportes.py` (filtrado, general, alertas, únicos) y generación de `reporte.txt`; `test_reportes.py` | Priscila | H4, H5 |
-| **H7** | Integración en `main.py`: login, menú nuevo y manejo de excepciones | Todas | H2-H6 |
+| **H4** | Adaptar consultas y alertas a diccionarios: `getValuesPerSector`, `orderHumidityValues`, `getCriticalValues`, `getIdealValues`, `filtrar_registros`; `test_operaciones.py` (parte consultas) | Jesica | H1 |
+| **H5** | Adaptar indicadores a diccionarios: máximo, mínimo, promedios, `agrupar_por_fecha`; `test_operaciones.py` (parte indicadores) | Priscila | H1 |
+| **H6** | `reportes.py` (filtrado, sector, general, alertas) y generación de los archivos de reporte (uno por sector y uno general); `test_reportes.py` | Priscila | H4, H5 |
+| **H7** | Integración en `main.py`: login, carga inicial del diccionario, menú nuevo, guardado al salir (también ante interrupción) y manejo de excepciones | Todas | H2-H6 |
 | **H8** | README actualizado, documento de evolución y evidencia de resultados de `pytest` | Todas | H7 |
 
 **Requisito:** cada integrante toca código, pruebas y documentación; commits pequeños y descriptivos (mínimo 6 por persona).
@@ -442,7 +464,9 @@ Alineados con la lista de control y la rúbrica de los lineamientos.
 | La ventana depende de la fecha actual, lo que complica las pruebas | `validar_fecha` y los filtros reciben la fecha de referencia como parámetro (sin variables globales ni `date.today()` escondido), así las pruebas son deterministas |
 | ¿Contraseñas en texto plano o con hash? | A definir |
 | ¿Qué ocurre si el CSV tiene dos mediciones para el mismo sector y fecha? | Se informa como fila inválida y se conserva la primera |
-| Modificar exige reescribir todo el CSV, con riesgo de perder filas si falla la escritura | Escritura en archivo temporal + reemplazo, y conservación de filas fuera de la ventana e inválidas (ver sección 6) |
-| ¿Se registra quién y cuándo modificó una medición? | Fuera de alcance por ahora; se puede evaluar una bitácora en `reporte.txt` si sobra tiempo |
+| Los cambios solo se guardan al salir: si el programa se cierra de forma anormal (corte de luz, cierre forzado) se pierde la sesión | Se acepta por alcance. Para cierres controlados, `main.py` guarda en un bloque `finally`, de modo que también se guarde ante `Ctrl+C` o una excepción inesperada |
+| El CSV se sobrescribe directamente: una falla durante la escritura puede dejarlo incompleto | Se acepta por alcance (sin temporal ni respaldo); el error se informa y se ofrece reintentar |
+| Al sobrescribir desde memoria, las filas fuera de la ventana y las inválidas se eliminan del archivo | **Riesgo aceptado por el equipo** dado el alcance de la materia: el CSV conserva solo las últimas 4 semanas y el historial anterior se pierde. Si en el futuro se necesitara historial completo, habría que conservar esas filas aparte |
+| ¿Se registra quién y cuándo modificó una medición? | Fuera de alcance por ahora; se puede evaluar una bitácora de texto aparte si sobra tiempo |
 | Pendientes de la devolución de Etapa 1 en `getCriticalValues` y `getIdealValues` | Resolver en H4 junto con su adaptación |
 | `README.md` actual tiene comandos de Git pegados al final | Limpiar al actualizarlo en H8 |

@@ -180,16 +180,16 @@ Cargado desde `configuracion.json`:
 - **Escritura directa (decisión de alcance):** el archivo se pisa directamente, sin archivo temporal ni copia de respaldo. Se acepta como limitación que una falla durante la escritura pueda dejar el archivo incompleto.
 - **Orden determinista:** al guardar, las filas se escriben ordenadas por fecha y luego por sector, con el mismo encabezado y orden de campos.
 - Los registros inválidos o fuera de la ventana se reportan al cargar (línea y motivo), sin descartar los válidos. Como no se incorporan a memoria, **no se reescriben** al guardar.
-- **Contraseñas:** se propone guardarlas como hash (`hashlib.sha256`) en `usuarios.json` en lugar de texto plano. Si el equipo prefiere simplicidad, se documenta como limitación.
+- **Contraseñas:** se guardan en **texto plano** en `usuarios.json` y se comparan directamente. Es una decisión de alcance del equipo; en un sistema real deberían almacenarse con hash.
 
 Ejemplo de `usuarios.json`:
 
 ```json
 {
   "usuarios": {
-    "nicole": "<hash>",
-    "jesica": "<hash>",
-    "priscila": "<hash>"
+    "nicole": "<contraseña>",
+    "jesica": "<contraseña>",
+    "priscila": "<contraseña>"
   }
 }
 ```
@@ -450,7 +450,7 @@ Alineados con la lista de control y la rúbrica de los lineamientos.
 ## 19. TECNOLOGÍA
 
 - **Python** 3.8 o superior
-- **Librería estándar:** `csv`, `json`, `re`, `datetime`, `hashlib`
+- **Librería estándar:** `csv`, `json`, `re`, `datetime`
 - **Herramienta de pruebas:** `pytest` (única dependencia externa; `pip install pytest`)
 - **Git/GitHub** para control de versiones
 
@@ -462,7 +462,7 @@ Alineados con la lista de control y la rúbrica de los lineamientos.
 |-------|-----------|
 | ¿Mantener la semana de 7 días o pasar a fechas libres? | Resuelto: fechas reales con ventana de 4 semanas (28 días), configurable en JSON |
 | La ventana depende de la fecha actual, lo que complica las pruebas | `validar_fecha` y los filtros reciben la fecha de referencia como parámetro (sin variables globales ni `date.today()` escondido), así las pruebas son deterministas |
-| ¿Contraseñas en texto plano o con hash? | A definir |
+| ¿Contraseñas en texto plano o con hash? | Resuelto: texto plano, por alcance de la materia (riesgo aceptado) |
 | ¿Qué ocurre si el CSV tiene dos mediciones para el mismo sector y fecha? | Se informa como fila inválida y se conserva la primera |
 | Los cambios solo se guardan al salir: si el programa se cierra de forma anormal (corte de luz, cierre forzado) se pierde la sesión | Se acepta por alcance. Para cierres controlados, `main.py` guarda en un bloque `finally`, de modo que también se guarde ante `Ctrl+C` o una excepción inesperada |
 | El CSV se sobrescribe directamente: una falla durante la escritura puede dejarlo incompleto | Se acepta por alcance (sin temporal ni respaldo); el error se informa y se ofrece reintentar |

@@ -1,0 +1,21 @@
+{
+  "sectores": {
+    "S01": "Frutillas",
+    "S02": "Frambuesas",
+    "S03": "Arándanos",
+    "S04": "Moras",
+    "S05": "Cerezas"
+  },
+  "limites": {
+    "critico_bajo": 20,
+    "ideal_bajo": 40,
+    "ideal_alto": 60,
+    "critico_alto": 80
+  },
+  "ventana_dias": 28,
+  "archivos": {
+    "registros": "datos/registros.csv",
+    "usuarios": "datos/usuarios.json",
+    "carpeta_reportes": "salida/reportes"
+  }
+}

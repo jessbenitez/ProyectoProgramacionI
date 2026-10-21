@@ -1,28 +1,27 @@
-def validar_sector(sector, nombres_sectores):
-   if (sector.isnumeric() and int(sector) in range(1, len(nombres_sectores) + 1)):
-       return True
-   else:
-       return False
+def registrar_medicion(mediciones, sector, fecha, humedad):
+    """Agrega una medición al diccionario en memoria (mediciones[sector][fecha] = humedad).
 
-def validar_dia(dia, dias_semana):
-   if (dia.isnumeric() and int(dia) in range(len(dias_semana))):
-       return True
-   else:
-       return False
+    Los datos llegan ya validados desde main.py. Lanza ValueError si ya existe una medición
+    para ese sector y fecha (para corregirla se usa modificar_medicion). Devuelve el diccionario.
+    """
+    if fecha in mediciones.setdefault(sector, {}):
+        raise ValueError(f"Ya existe una medición para {sector} en {fecha}: use 'Modificar medición' para cambiarla")
+    mediciones[sector][fecha] = humedad
+    return mediciones
 
-def validar_humedad(humedad):
-   if (humedad.isnumeric() and int(humedad) in range(-1, 101)):
-       return True
-   else:
-       return False
 
-def registrar_medicion(valores_actuales, id_sector, id_dia, humedad):
-    indice_sector = id_sector - 1
-    if valores_actuales[indice_sector][id_dia] != -1:
-        return valores_actuales, False, "Error: Ese valor ya fue registrado"
+def buscar_medicion(mediciones, sector, fecha):
+    """Devuelve la humedad registrada para un sector y fecha. Lanza ValueError si no existe."""
+    if fecha not in mediciones.get(sector, {}):
+        raise ValueError(f"No existe una medición para {sector} en {fecha}")
+    return mediciones[sector][fecha]
 
-    valores_actuales[indice_sector][id_dia] = humedad
-    return valores_actuales, True, "Medición registrada correctamente"
+
+def modificar_medicion(mediciones, sector, fecha, nueva_humedad):
+    """Reemplaza la humedad de una medición existente. Lanza ValueError si no existe. Devuelve el diccionario."""
+    buscar_medicion(mediciones, sector, fecha)
+    mediciones[sector][fecha] = nueva_humedad
+    return mediciones
 
 
 # Indicacores -------------------------------------------------------------------------------------

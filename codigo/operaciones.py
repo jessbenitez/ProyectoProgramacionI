@@ -53,91 +53,108 @@ def getAverageHumidityTotal(sectores: list) -> float:
     return sum(valores_validos) / len(valores_validos)
 
 #----------------------------------------------------------------------------------------------------------
-def getValuesPerSector(sectores, id_sector):
-    return sectores[id_sector - 1]
 
-def orderHumidityValues(sector_id):
-    mediciones_validas = [v for v in sector_id if v != -1]
-    return sorted(mediciones_validas, key=lambda x: x, reverse=True)
+def es_critica(humedad, limites):
+    """Devuelve True si la humedad está en zona crítica (menor que critico_bajo o mayor que critico_alto).
 
-def formatear_detalle_sector(sectores: list, id_sector: int, nombres_sectores: tuple, dias_semana: tuple) -> str:
-    valores_sector = getValuesPerSector(sectores, id_sector)
-    nombre_sector = nombres_sectores[id_sector - 1]
-
-    lineas = [f"\n--- Mediciones del Sector {id_sector} ({nombre_sector}) ---"]
-
-    for idx, humedad in enumerate(valores_sector):
-        dia_nombre = dias_semana[idx]
-        if humedad == -1:
-            lineas.append(f"{dia_nombre}: Sin registro")
-        else:
-            lineas.append(f"{dia_nombre}: {humedad}% de humedad")
-
-    valores_ordenados = orderHumidityValues(valores_sector)
-    lineas.append(f"\nValores ordenados (mayor a menor): {valores_ordenados}")
-    lineas.append(f"Top 3 mediciones más altas: {valores_ordenados[:3]}\n")
-    return "\n".join(lineas)
-
-
-def formatear_sectores_criticos(sectores: list, nombres_sectores: tuple) -> str:
-    promedios_por_sector = getAverageHumidityPerSector(sectores)
-    indices_criticos = getCriticalValues(promedios_por_sector)
-    lineas = ["\n--- Identificación de Sectores Críticos (< 20% o > 80%) ---"]
-    if indices_criticos:
-        for i in indices_criticos:
-            prom = promedios_por_sector[i]
-            lineas.append(f"- {nombres_sectores[i]}: ({prom:.1f}%)")
-    else:
-        lineas.append(" No hay sectores con promedio que alcancen rango crítico.")
-    return "\n".join(lineas)
-
-
-def formatear_sectores_ideales(sectores: list, nombres_sectores: tuple, ideal_target: int, tolerancia: int) -> str:
-    rango_min = ideal_target - tolerancia
-    rango_max = ideal_target + tolerancia
-
-    promedios_por_sector = getAverageHumidityPerSector(sectores)
-    indices_ideales = getIdealValues(promedios_por_sector, float(rango_min), float(rango_max))
-
-    lineas = ["\n--- Identificación de Zona Ideal ---", f"\nSectores en Zona Ideal ({rango_min}% - {rango_max}%):"]
-    if indices_ideales:
-        for i in indices_ideales:
-            prom = promedios_por_sector[i]
-            lineas.append(f"- {nombres_sectores[i]}: ({prom:.1f}%)")
-    else:
-        lineas.append("No hay sectores con promedio dentro del rango ideal.")
-    return "\n".join(lineas)
-
-def getIdealValues(promedios_por_sector, ideal_bajo = 40.0, ideal_alto = 60.0) -> list:
+    Los límites no son críticos: con los valores por defecto, 20 y 80 NO son críticos.
     """
-    Obtiene los índices de los sectores con humedad ideal.
+    return humedad < limites["critico_bajo"] or humedad > limites["critico_alto"]
 
-    Rango: entre ideal_bajo e ideal_alto (40-60%, inclusive)
-    Se calcula sobre el promedio del sector, excluyendo valores -1.
-    Los sectores sin mediciones (promedio -1) no se consideran.
 
-    Retorna: Lista con índices (0 a 4) de los sectores ideales
+def es_ideal(humedad, limites):
+    """Devuelve True si la humedad está en zona ideal (entre ideal_bajo e ideal_alto, inclusive)."""
+    return limites["ideal_bajo"] <= humedad <= limites["ideal_alto"]
 
-    Nota: Usa comprensión de listas
+def getValuesPerSector(mediciones, codigo_sector):
+    """Devuelve las mediciones de un sector como diccionario fecha -> humedad.
+
+    Devuelve una COPIA, para que quien la use no modifique el diccionario principal por accidente.
+    Lanza ValueError si el sector no existe en las mediciones.
     """
-    return [i for i, valor in enumerate(promedios_por_sector) if valor >= ideal_bajo and valor <= ideal_alto]
+    if codigo_sector not in mediciones:
+        raise ValueError(f"No hay datos para el sector {codigo_sector}")
+    return dict(mediciones[codigo_sector])
 
-# H5 ------------------------------------------------------------------------------------------------------
-def getCriticalValues(promedios_por_sector, limite_bajo=20.0, limite_alto=80.0) -> list:
+def orderHumidityValues(valores_sector, descendente=True):
+    """Ordena las mediciones de un sector por humedad.
+
+    Recibe un diccionario fecha -> humedad (por ejemplo, el que devuelve getValuesPerSector)
+    y devuelve una lista de tuplas (fecha, humedad), de mayor a menor por defecto.
+    Con un diccionario vacío devuelve una lista vacía.
     """
-    Obtiene los índices de los sectores con humedad crítica (<20% o >80%).
+    return sorted(valores_sector.items(), key=lambda par: par[1], reverse=descendente)
 
-    Qué recibe: una lista de promedios por sector, y dos límites con valor por defecto (20 y 80).
-    Qué devuelve: una lista de índices internos (0 a 4), no de IDs ni de nombres.
-    Ejemplo: [0, 1, 4] significa sectores A, B y E. Si no hay críticos, lista vacía.
-    Los sectores sin mediciones (promedio -1) no se consideran críticos.
 
-    Nota: Usa comprensión de listas
+
+def getCriticalValues(promedios_por_sector, limites):
+    """Devuelve la lista de códigos de sector cuyo PROMEDIO está en zona crítica.
+
+    Recibe un diccionario código -> promedio (lo calcula getAverageHumidityPerSector, H5).
+    Los sectores sin mediciones (promedio None) no se consideran.
+    Ejemplo: {"S01": 15.0, "S02": 50.0, "S03": None} -> ["S01"]
     """
     return [
-        i for i, valor in enumerate(promedios_por_sector)
-        if valor >= 0 and (valor < limite_bajo or valor > limite_alto)
+        codigo for codigo, promedio in promedios_por_sector.items()
+        if promedio is not None and es_critica(promedio, limites)
     ]
+
+def getIdealValues(promedios_por_sector, limites):
+    """Devuelve la lista de códigos de sector cuyo PROMEDIO está en zona ideal (límites inclusive).
+
+    Recibe un diccionario código -> promedio. Los sectores sin mediciones (None) no se consideran.
+    Ejemplo: {"S01": 40.0, "S02": 61.0} -> ["S01"]
+    """
+    return [
+        codigo for codigo, promedio in promedios_por_sector.items()
+        if promedio is not None and es_ideal(promedio, limites)
+    ]
+
+
+def obtener_mediciones_criticas(mediciones, limites):
+    """Devuelve, por sector, solo las mediciones individuales en zona crítica (las alertas).
+
+    El resultado tiene la misma forma que mediciones: código -> {fecha: humedad}.
+    Todos los sectores aparecen, aunque no tengan alertas (con un diccionario vacío), para que
+    el reporte de cada sector pueda pedir alertas["S01"] sin riesgo de KeyError.
+    """
+    return {
+        codigo: {fecha: humedad for fecha, humedad in fechas.items() if es_critica(humedad, limites)}
+        for codigo, fechas in mediciones.items()
+    }
+
+
+def filtrar_registros(mediciones, codigo_sector=None, desde=None, hasta=None):
+    """Filtra las mediciones por sector, por fecha o por rango de fechas.
+
+    - codigo_sector: un código ("S01") o None para incluir todos los sectores.
+    - desde / hasta: fechas "AAAA-MM-DD" (inclusive). None significa "sin límite" de ese lado.
+      Para filtrar UNA fecha se pasa la misma fecha en desde y hasta.
+
+    Devuelve un diccionario NUEVO con la misma forma que mediciones (código -> {fecha: humedad}),
+    con las fechas ordenadas. Así, al resultado se le pueden aplicar las mismas funciones de
+    indicadores (por ejemplo, el promedio del filtro). No modifica el diccionario original.
+
+    Lanza ValueError si el sector no existe o si desde es posterior a hasta.
+    Las fechas deben llegar ya validadas (validaciones.validar_fecha) desde main.py.
+    """
+    if codigo_sector is not None and codigo_sector not in mediciones:
+        raise ValueError(f"No hay datos para el sector {codigo_sector}")
+    if desde is not None and hasta is not None and desde > hasta:
+        raise ValueError(f"Rango inválido: la fecha inicial ({desde}) es posterior a la final ({hasta})")
+
+    codigos = [codigo_sector] if codigo_sector is not None else list(mediciones)
+
+    return {
+        codigo: {
+            fecha: humedad
+            for fecha, humedad in sorted(mediciones[codigo].items())
+            if (desde is None or desde <= fecha) and (hasta is None or fecha <= hasta)
+        }
+        for codigo in codigos
+    }
+
+
 
 # HISTORIA H6: REPORTE FINAL-------------------------------------------------------------------------------------
 def generar_reporte_final(sectores: list, nombres_sectores: tuple, dias_semana: tuple) -> str:

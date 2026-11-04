@@ -25,32 +25,115 @@ def modificar_medicion(mediciones, sector, fecha, nueva_humedad):
 
 
 # Indicacores -------------------------------------------------------------------------------------
-def getMaxHumidityValue(sectores: list) -> float:
-    valores_validos = [val for fila in sectores for val in fila if val >= 0]
-    return float(max(valores_validos)) if valores_validos else -1.0
+# Indicacores H5 actualizar funciones ---------------------------------------------------------------
+# def getMaxHumidityValue(sectores: list) -> float:
+#     valores_validos = [val for fila in sectores for val in fila if val >= 0]
+#     return float(max(valores_validos)) if valores_validos else -1.0
+
+def getMaxHumidityValue(mediciones):
+    valores = [
+        humedad
+        for mediciones_sector in mediciones.values()
+        for humedad in mediciones_sector.values()
+    ]
+
+    if not valores:
+        return None
+
+    return max(valores)
+#-------------------------------------------------------------------------------------------------
+
+# def getMinHumidityValue(sectores: list) -> float:
+#     valores_validos = [val for fila in sectores for val in fila if val >= 0]
+#     return float(min(valores_validos)) if valores_validos else -1.0
 
 
-def getMinHumidityValue(sectores: list) -> float:
-    valores_validos = [val for fila in sectores for val in fila if val >= 0]
-    return float(min(valores_validos)) if valores_validos else -1.0
+
+def getMinHumidityValue(mediciones):
+    valores = [
+        humedad
+        for mediciones_sector in mediciones.values()
+        for humedad in mediciones_sector.values()
+    ]
+
+    if not valores:
+        return None
+
+    return min(valores)
+#------------------------------------------------------
 
 
-def getAverageHumidityPerSector(sectores: list) -> list:
-    promedios = []
-    for fila in sectores:
-        validos = [val for val in fila if val >= 0]
-        if validos:
-            promedios.append(sum(validos) / len(validos))
+# def getAverageHumidityPerSector(sectores: list) -> list:
+#     promedios = []
+#     for fila in sectores:
+#         validos = [val for val in fila if val >= 0]
+#         if validos:
+#             promedios.append(sum(validos) / len(validos))
+#         else:
+#             promedios.append(-1.0)
+#     return promedios
+
+def getAverageHumidityPerSector(mediciones):
+    promedios = {}
+
+    for codigo_sector, mediciones_sector in mediciones.items():
+
+        if not mediciones_sector:
+            promedios[codigo_sector] = None
+
         else:
-            promedios.append(-1.0)
+            valores = mediciones_sector.values()
+            promedio = sum(valores) / len(valores)
+            promedios[codigo_sector] = promedio
+
     return promedios
 
 
-def getAverageHumidityTotal(sectores: list) -> float:
-    valores_validos = [val for fila in sectores for val in fila if val >= 0]
-    if not valores_validos:
-        return -1.0
-    return sum(valores_validos) / len(valores_validos)
+#------------------------------------------------------
+
+
+
+# def getAverageHumidityTotal(sectores: list) -> float:
+#     valores_validos = [val for fila in sectores for val in fila if val >= 0]
+#     if not valores_validos:
+#         return -1.0
+#     return sum(valores_validos) / len(valores_validos)
+
+def getAverageHumidityTotal(mediciones):
+    valores = [
+        humedad
+        for mediciones_sector in mediciones.values()
+        for humedad in mediciones_sector.values()
+    ]
+
+    if not valores:
+        return None
+
+    return sum(valores) / len(valores)
+
+#---------------------------------------------------------
+
+def agrupar_por_fecha(mediciones):
+    acumulador = {}
+
+    for mediciones_sector in mediciones.values():
+
+        for fecha, humedad in mediciones_sector.items():
+
+            if fecha not in acumulador:
+                acumulador[fecha] = []
+
+            acumulador[fecha].append(humedad)
+
+    promedios_por_fecha = {}
+
+    for fecha, valores in acumulador.items():
+
+        promedio = sum(valores) / len(valores)
+        promedios_por_fecha[fecha] = promedio
+
+    return promedios_por_fecha
+
 
 #----------------------------------------------------------------------------------------------------------
 def getValuesPerSector(sectores, id_sector):

@@ -74,8 +74,8 @@ La información se mantendrá **únicamente en memoria** durante la ejecución. 
 |-----------|-----|---------|
 | **Matriz** | Datos de humedad: filas = sectores, columnas = días | `[[45, 52, 48, 61, ...], [78, 82, 79, 88, ...]]` |
 | **Lista** | Resultados de búsquedas y filtrados | `[45, 52, 48, 61, ...]` |
-| **Tupla** | Datos fijos: nombres de sectores, días de semana | `("Sector A", "Sector B", "Sector C")` |
-| **Cadena** | Identificadores, etiquetas, mensajes | `"Sector A"`, `"25.5%"` |
+| **Tupla** | Datos fijos: nombres de sectores, días de semana | `("Frutillas", "Frambuesas", "Arándanos")` |
+| **Cadena** | Identificadores, etiquetas, mensajes | `"Frutillas"`, `"25.5%"` |
 
 ### 4.2 Especificaciones de Datos
 
@@ -91,11 +91,11 @@ El sistema utiliza una representación clara para el usuario:
 
 | ID Visible | Nombre | Índice Interno |
 |-----------|--------|-----------------|
-| 1 | Sector A | 0 |
-| 2 | Sector B | 1 |
-| 3 | Sector C | 2 |
-| 4 | Sector D | 3 |
-| 5 | Sector E | 4 |
+| 1 | Frutillas | 0 |
+| 2 | Frambuesas | 1 |
+| 3 | Arándanos | 2 |
+| 4 | Moras | 3 |
+| 5 | Cerezas | 4 |
 
 **Nota:** El usuario ve IDs 1-5 y nombres descriptivos. Los índices 0-4 son internos de Python.
 
@@ -115,14 +115,15 @@ El sistema utiliza una representación clara para el usuario:
 - Se **excluye** de todos los cálculos (promedios, máximos, mínimos)
 - Se reporta como "Sin medición" en la interfaz
 
-**Ejemplo de matriz inicial:**
+La carga inicial genera la matriz de forma aleatoria pero con una minoría de celdas con medición (~30%), dejando la mayoría en -1, de modo que siempre queden celdas libres para probar el registro de mediciones. Un ejemplo posible de matriz recién generada:
+
 ```
 sectores = [
-    [45, 52, 48, 61, -1, -1, -1],  # Sector A: 4 días con datos
-    [78, 82, 79, -1, -1, -1, -1],  # Sector B: 3 días con datos
-    [-1, -1, -1, -1, -1, -1, -1],  # Sector C: sin datos aún
-    [35, 40, 38, 42, 39, 41, 36],  # Sector D: semana completa
-    [65, 68, 70, 72, 71, 69, 67]   # Sector E: semana completa
+    [45, -1, -1, 61, -1, -1, -1],   # Frutillas: 2 días con datos
+    [-1, -1, 79, -1, -1, -1, -1],   # Frambuesas: 1 día con datos
+    [-1, -1, -1, -1, -1, -1, -1],   # Arándanos: sin datos aún
+    [-1, 40, -1, -1, 39, -1, -1],   # Moras: 2 días con datos
+    [-1, -1, -1, 72, -1, -1, 67]    # Cerezas: 2 días con datos
 ]
 ```
 
@@ -455,7 +456,7 @@ El proyecto será aceptado cuando:
 4. Ver sectores ideales
 5. Registrar nueva medición
 6. Generar reporte final
-0. Salir
+fin. Salir
 
 Ingrese opción:
 ```
@@ -473,18 +474,18 @@ INDICADORES GENERALES:
 - Mínimo: 12.0%
 
 PROMEDIO POR SECTOR:
-- Sector A: 45.3%
-- Sector B: 80.0%
-- Sector C: N/A (sin mediciones)
-- Sector D: 38.5%
-- Sector E: 68.2%
+- Frutillas: 45.3%
+- Frambuesas: 80.0%
+- Arándanos: N/A (sin mediciones)
+- Moras: 38.5%
+- Cerezas: 68.2%
 
 SECTORES CRÍTICOS (< 20% o > 80%):
-- Sector B (80.0%)
+- Frambuesas (80.0%)
 
 SECTORES IDEALES (40-60%):
-- Sector A (45.3%)
-- Sector D (38.5%)
+- Frutillas (45.3%)
+- Moras (38.5%)
 ```
 
 ---

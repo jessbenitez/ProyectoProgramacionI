@@ -9,7 +9,7 @@ def validar_fecha(fecha, fecha_referencia, ventana_dias):
     fecha_referencia es un objeto date (normalmente la fecha de hoy), recibido por parámetro.
     Devuelve la fecha como objeto date.
     """
-    if not isinstance(fecha, str) or not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", fecha):
+    if not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", fecha):
         raise ValueError("Fecha inválida: se esperaba el formato AAAA-MM-DD (ej: 2026-10-12)")
 
     try:
@@ -25,7 +25,7 @@ def validar_fecha(fecha, fecha_referencia, ventana_dias):
 
 def validar_codigo_sector(codigo, sectores):
     """Formato S## y existencia en el diccionario de sectores de la configuración. Devuelve el código."""
-    if not isinstance(codigo, str) or not re.fullmatch(r"S[0-9]{2}", codigo):
+    if not re.fullmatch(r"S[0-9]{2}", codigo):
         raise ValueError("Sector inválido: se esperaba el formato S## (ej: S01)")
     if codigo not in sectores:
         raise ValueError(f"Sector inexistente: los sectores válidos son {', '.join(sectores)}")
@@ -45,6 +45,6 @@ def validar_humedad(humedad):
 
 def validar_usuario(usuario):
     """Formato de nombre de usuario: minúsculas, dígitos o guion bajo, de 3 a 20 caracteres."""
-    if not isinstance(usuario, str) or not re.fullmatch(r"[a-z0-9_]{3,20}", usuario):
+    if not re.fullmatch(r"[a-z0-9_]{3,20}", usuario):
         raise ValueError("Usuario inválido: se esperaban de 3 a 20 caracteres entre minúsculas, dígitos o guion bajo")
     return usuario

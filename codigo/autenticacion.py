@@ -17,14 +17,17 @@ def cargar_usuarios(ruta):
     with open(ruta, "r", encoding="utf-8") as archivo:
         datos = json.load(archivo)
 
-    if not isinstance(datos, dict) or "usuarios" not in datos:
-        raise KeyError("usuarios.json: falta la clave 'usuarios'")
+    try:
+        usuarios = datos["usuarios"]
+        contrasenas = list(usuarios.values())
+    except KeyError:
+        raise KeyError("usuarios.json: falta la clave 'usuarios'") from None
+    except (TypeError, AttributeError):
+        # El JSON es válido pero no tiene la forma {"usuarios": {"nombre": "contraseña"}}
+        raise ValueError("usuarios.json: estructura inválida, se esperaba {\"usuarios\": {usuario: contraseña}}") from None
 
-    usuarios = datos["usuarios"]
-    if not isinstance(usuarios, dict) or not usuarios:
-        raise ValueError("usuarios.json: 'usuarios' debe ser un objeto no vacío")
-    if not all(isinstance(contrasena, str) and contrasena for contrasena in usuarios.values()):
-        raise ValueError("usuarios.json: todas las contraseñas deben ser texto no vacío")
+    if not usuarios or not all(contrasenas):
+        raise ValueError("usuarios.json: debe haber al menos un usuario y ninguna contraseña puede estar vacía")
     return usuarios
 
 

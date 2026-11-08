@@ -1,4 +1,3 @@
-"""Acceso a archivos: CSV, JSON y texto. Lanza excepciones de E/S; quien interactúa con el usuario las captura."""
 import csv
 import json
 import os
@@ -6,21 +5,14 @@ import os
 import validaciones
 
 def campos_csv():
-    """Campos del CSV de registros, en el orden en que se leen y se escriben."""
     return ("fecha", "sector", "humedad")
 
 
 def cargar_configuracion(ruta):
-    """Lee configuracion.json y devuelve el diccionario de configuración. No reemplaza silenciosamente un archivo faltante o inválido.
-
-    Lanza FileNotFoundError si no existe, json.JSONDecodeError si no es JSON válido,
-    KeyError si falta una clave obligatoria y ValueError si un valor es inválido.
-    """
     with open(ruta, "r", encoding="utf-8") as archivo:
         config = json.load(archivo)
 
     try:
-        ##Verifico que existan todas las claves obligatorias y que tengan valores validos
         for clave in ("sectores", "limites", "ventana_dias", "archivos"):
             if clave not in config:
                 raise KeyError(f"configuracion.json: falta la clave '{clave}'")
@@ -37,19 +29,11 @@ def cargar_configuracion(ruta):
         if config["ventana_dias"] < 1:
             raise ValueError("configuracion.json: 'ventana_dias' debe ser un número positivo")
     except (TypeError, AttributeError):
-        # El JSON es válido pero algún valor no tiene la forma esperada (por ejemplo un texto donde va un número)
         raise ValueError("configuracion.json: estructura inválida, revise que cada valor tenga el tipo esperado") from None
     return config
 
 
 def cargar_registros(ruta, sectores, fecha_referencia, ventana_dias):
-    """Lee el CSV y devuelve (mediciones, rechazadas): mediciones[sector][fecha] = humedad, y la lista de filas rechazadas con línea y motivo.
-
-    Todos los sectores de la configuración aparecen en mediciones, aunque no tengan datos.
-    Las filas inválidas, duplicadas o fuera de la ventana no se incorporan: se informan en rechazadas
-    como textos "Línea N: motivo". Si hay duplicados se conserva la primera medición.
-    Lanza FileNotFoundError si el archivo no existe y ValueError si el encabezado es incorrecto.
-    """
     mediciones = {codigo: {} for codigo in sectores}
     rechazadas = []
 
@@ -79,7 +63,6 @@ def cargar_registros(ruta, sectores, fecha_referencia, ventana_dias):
 
 
 def guardar_registros(ruta, mediciones):
-    """Sobrescribe el CSV con el diccionario en memoria, ordenado por fecha y sector, con encabezado fecha,sector,humedad."""
     claves = sorted((fecha, sector) for sector, fechas in mediciones.items() for fecha in fechas)
 
     with open(ruta, "w", encoding="utf-8", newline="") as archivo:
@@ -90,7 +73,6 @@ def guardar_registros(ruta, mediciones):
 
 
 def guardar_reporte(ruta, texto):
-    """Escribe un archivo de texto de reporte, creando la carpeta si falta."""
     carpeta = os.path.dirname(ruta)
     if carpeta:
         os.makedirs(carpeta, exist_ok=True)

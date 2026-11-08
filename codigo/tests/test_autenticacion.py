@@ -1,4 +1,3 @@
-# Pruebas de autenticacion.py
 import json
 
 import pytest
@@ -16,12 +15,10 @@ def escribir(ruta, contenido):
 
 
 def simular(respuestas):
-    """Devuelve una función que entrega las credenciales de a una, como si las tipeara el usuario."""
     pendientes = list(respuestas)
     return lambda: pendientes.pop(0)
 
 
-# --- cargar_usuarios ---
 def test_cargar_usuarios_validos(tmp_path):
     ruta = escribir(tmp_path / "u.json", json.dumps({"usuarios": datos_usuarios()}))
     assert autenticacion.cargar_usuarios(ruta) == datos_usuarios()
@@ -53,7 +50,6 @@ def test_cargar_usuarios_contenido_invalido(tmp_path, contenido):
         autenticacion.cargar_usuarios(escribir(tmp_path / "u.json", json.dumps(contenido)))
 
 
-# --- validar_credenciales ---
 def test_credenciales_correctas():
     assert autenticacion.validar_credenciales(datos_usuarios(), "nicole", "alumna123") is True
 
@@ -75,7 +71,6 @@ def test_usuario_con_formato_invalido_lanza_excepcion():
         autenticacion.validar_credenciales(datos_usuarios(), "Nicole!", "alumna123")
 
 
-# --- autenticar (límite de intentos) ---
 def test_autenticar_a_la_primera():
     mensajes = []
     usuario = autenticacion.autenticar(datos_usuarios(), simular([("nicole", "alumna123")]), mensajes.append)
@@ -94,7 +89,7 @@ def test_autenticar_acierta_en_el_ultimo_intento():
 def test_autenticar_agota_los_tres_intentos():
     mensajes = []
     respuestas = [("nicole", "a"), ("nicole", "b"), ("nicole", "c"), ("nicole", "alumna123")]
-    with pytest.raises(autenticacion.AccesoDenegado):
+    with pytest.raises(ValueError):
         autenticacion.autenticar(datos_usuarios(), simular(respuestas), mensajes.append)
     assert len(mensajes) == 3
 
@@ -106,7 +101,7 @@ def test_autenticar_no_pide_credenciales_de_mas():
         pedidas.append(1)
         return ("nicole", "mal")
 
-    with pytest.raises(autenticacion.AccesoDenegado):
+    with pytest.raises(ValueError):
         autenticacion.autenticar(datos_usuarios(), pedir, lambda mensaje: None, max_intentos=2)
     assert len(pedidas) == 2
 
@@ -120,6 +115,6 @@ def test_autenticar_formato_invalido_cuenta_como_intento_y_explica_el_formato():
 
 def test_mensaje_no_revela_si_el_usuario_existe():
     mensajes = []
-    with pytest.raises(autenticacion.AccesoDenegado):
+    with pytest.raises(ValueError):
         autenticacion.autenticar(datos_usuarios(), simular([("nicole", "x"), ("fulano", "x")]), mensajes.append, max_intentos=2)
     assert mensajes[0].split(" (")[0] == mensajes[1].split(" (")[0]

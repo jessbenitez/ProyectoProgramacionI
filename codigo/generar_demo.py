@@ -1,8 +1,3 @@
-"""Regenera los datos de demostración con fechas relativas a hoy (la ventana es móvil).
-
-Uso: python generar_demo.py [AAAA-MM-DD]   (sin argumento usa la fecha actual)
-Escribe datos/registros.csv (válido) y datos/registros_con_errores.csv (con filas inválidas).
-"""
 import os
 import random
 import sys
@@ -12,11 +7,9 @@ import archivos
 
 
 def generar_mediciones(sectores, hoy, ventana_dias):
-    # Cada sector tiene distinta cantidad de mediciones: se registra cada N días hacia atrás. S05 queda sin datos.
     paso_por_sector = {"S01": 1, "S02": 2, "S03": 4}
     dias_fijos_s04 = (0, 13, 27)
 
-    # (sector, días hacia atrás desde hoy) -> humedad. Cubre críticos, ideales y valores límite.
     valores_fijos = {
         ("S01", 27): 20, ("S01", 20): 40, ("S01", 13): 60, ("S01", 6): 80,
         ("S01", 2): 12.5, ("S01", 9): 91.0,
@@ -25,7 +18,7 @@ def generar_mediciones(sectores, hoy, ventana_dias):
         ("S04", 13): 79.9,
     }
 
-    rng = random.Random(404)  # semilla fija: mismos valores en cada regeneración
+    rng = random.Random(404)
     mediciones = {codigo: {} for codigo in sectores}
     for sector in sectores:
         if sector in paso_por_sector:
@@ -37,7 +30,6 @@ def generar_mediciones(sectores, hoy, ventana_dias):
         for atras in dias:
             fecha = (hoy - timedelta(days=atras)).isoformat()
             mediciones[sector][fecha] = valores_fijos.get((sector, atras), round(rng.uniform(25, 75), 1))
-    # Un registro anterior a la ventana: se informa al cargar y no se reescribe al guardar.
     mediciones["S01"][(hoy - timedelta(days=ventana_dias + 2)).isoformat()] = 47.2
     return mediciones
 
@@ -45,15 +37,15 @@ def generar_mediciones(sectores, hoy, ventana_dias):
 def filas_invalidas(hoy, ventana_dias):
     dentro = (hoy - timedelta(days=5)).isoformat()
     return [
-        f"{hoy - timedelta(days=ventana_dias)},S02,50",  # justo fuera de la ventana
-        f"{hoy + timedelta(days=1)},S02,50",  # fecha futura
-        "12/10/2026,S02,50",  # formato de fecha
-        f"{hoy.year}-02-30,S02,50",  # fecha inexistente
-        f"{dentro},S99,50",  # sector inexistente
-        f"{dentro},S02,150",  # humedad fuera de rango
-        f"{dentro},S02,abc",  # humedad no numérica
-        f"{dentro},S02",  # faltan columnas
-        f"{(hoy - timedelta(days=1)).isoformat()},S01,33.3",  # duplicado de una fila válida (se conserva la primera)
+        f"{hoy - timedelta(days=ventana_dias)},S02,50",
+        f"{hoy + timedelta(days=1)},S02,50",
+        "12/10/2026,S02,50",
+        f"{hoy.year}-02-30,S02,50",
+        f"{dentro},S99,50",
+        f"{dentro},S02,150",
+        f"{dentro},S02,abc",
+        f"{dentro},S02",
+        f"{(hoy - timedelta(days=1)).isoformat()},S01,33.3",
     ]
 
 

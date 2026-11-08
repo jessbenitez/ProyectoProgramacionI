@@ -11,7 +11,6 @@ import validaciones
 
 
 def pedir_dato(mensaje, validador):
-    """Pide un dato por consola hasta que el validador lo acepte (sin lanzar ValueError)."""
     while True:
         valor = input(mensaje).strip()
         try:
@@ -74,7 +73,6 @@ def modificar_medicion_existente(mediciones, config, hoy):
 
 
 def pedir_filtro(config, hoy):
-    """Pregunta por qué filtrar y devuelve un diccionario para filtrar_registros."""
     print("Filtrar por:")
     print("1. Sector")
     print("2. Fecha")
@@ -181,7 +179,6 @@ def mostrar_reporte_filtrado(mediciones, config, hoy):
 
 
 def guardar_texto_reporte(carpeta, nombre_archivo, texto):
-    """Escribe un reporte; ante un error informa cuál falló y sigue. Devuelve True si se pudo escribir."""
     ruta = os.path.join(carpeta, nombre_archivo)
     try:
         archivos.guardar_reporte(ruta, texto)
@@ -250,7 +247,6 @@ def menu(usuario, mediciones, config, hoy, carpeta_reportes):
 
 
 def guardar_con_reintento(ruta, mediciones):
-    """Sobrescribe el CSV con el diccionario en memoria; ante un error de E/S ofrece reintentar."""
     while True:
         try:
             archivos.guardar_registros(ruta, mediciones)
@@ -268,14 +264,12 @@ def guardar_con_reintento(ruta, mediciones):
 
 
 def cargar_historial(ruta, config, hoy):
-    """Lee el CSV al diccionario en memoria. Si no existe arranca vacío. Devuelve None si el archivo es inutilizable."""
     try:
         mediciones, rechazadas = archivos.cargar_registros(ruta, config["sectores"], hoy, config["ventana_dias"])
     except FileNotFoundError:
         print("No se encontró el archivo de registros: se arranca sin historial y se creará al salir.")
         return {codigo: {} for codigo in config["sectores"]}
     except (ValueError, OSError) as error:
-        # No se continúa: al salir se sobrescribiría el archivo y se perdería su contenido.
         print(f"Error al leer {ruta}: {error}")
         return None
 
@@ -305,11 +299,9 @@ def main():
     tiene_digitos = perfil_equipo.contiene_digitos(nombre_equipo)
     print(f"El nombre del equipo contiene dígitos: {tiene_digitos}")
 
-    #A partir de este punto comenzamos a implementar el programa
     carpeta = os.path.dirname(os.path.abspath(__file__))
     hoy = date.today()
 
-    # La configuración y los usuarios son obligatorios: si faltan o son inválidos no se continúa.
     try:
         config = archivos.cargar_configuracion(os.path.join(carpeta, "datos", "configuracion.json"))
         usuarios = autenticacion.cargar_usuarios(os.path.join(carpeta, config["archivos"]["usuarios"]))
@@ -328,7 +320,7 @@ def main():
 
     try:
         usuario = autenticacion.autenticar(usuarios, pedir_credenciales, print)
-    except autenticacion.AccesoDenegado as error:
+    except ValueError as error:
         print(error)
         return
     print(f"\nBienvenido/a, {usuario}.")
@@ -339,7 +331,6 @@ def main():
     if mediciones is None:
         return
 
-    # El guardado va en finally para que también ocurra ante Ctrl+C o un error inesperado.
     try:
         menu(usuario, mediciones, config, hoy, carpeta_reportes)
     finally:

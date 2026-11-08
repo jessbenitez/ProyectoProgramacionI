@@ -201,10 +201,11 @@ def generar_reportes_en_archivos(mediciones, config, hoy, carpeta_reportes):
     guardar_texto_reporte(carpeta_reportes, "reporte_general.txt", texto)
 
 
-def menu(mediciones, config, hoy, carpeta_reportes):
+def menu(usuario, mediciones, config, hoy, carpeta_reportes):
     opcion = ""
     while opcion != "fin":
         print("\n=== SISTEMA DE MONITOREO DE HUMEDAD EN CULTIVOS ===")
+        print(f"Usuario: {usuario}\n")
         print("1. Registrar nueva medición")
         print("2. Modificar medición existente")
         print("3. Consultar mediciones")
@@ -333,7 +334,7 @@ def main():
 
     # El guardado va en finally para que también ocurra ante Ctrl+C o un error inesperado.
     try:
-        menu(mediciones, config, hoy, carpeta_reportes)
+        menu(usuario, mediciones, config, hoy, carpeta_reportes)
     finally:
         guardar_con_reintento(ruta_registros, mediciones)
 

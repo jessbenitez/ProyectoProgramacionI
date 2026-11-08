@@ -1,4 +1,3 @@
-# Pruebas de validaciones.py
 from datetime import date
 
 import pytest
@@ -14,7 +13,6 @@ def datos_sectores():
     return {"S01": "Frutillas", "S02": "Frambuesas"}
 
 
-# --- fecha ---
 def test_fecha_valida():
     assert validaciones.validar_fecha("2026-10-12", datos_hoy(), 28) == date(2026, 10, 12)
 
@@ -31,7 +29,6 @@ def test_fecha_mensaje_indica_formato_esperado():
 
 
 def test_fecha_limites_de_la_ventana():
-    # hoy y hoy menos 27 días se aceptan; hoy menos 28 días y mañana se rechazan
     assert validaciones.validar_fecha("2026-10-14", datos_hoy(), 28) == datos_hoy()
     assert validaciones.validar_fecha("2026-09-17", datos_hoy(), 28) == date(2026, 9, 17)
     with pytest.raises(ValueError):
@@ -40,7 +37,6 @@ def test_fecha_limites_de_la_ventana():
         validaciones.validar_fecha("2026-10-15", datos_hoy(), 28)
 
 
-# --- sector ---
 def test_sector_valido():
     assert validaciones.validar_codigo_sector("S01", datos_sectores()) == "S01"
 
@@ -56,7 +52,6 @@ def test_sector_con_formato_correcto_pero_inexistente():
         validaciones.validar_codigo_sector("S09", datos_sectores())
 
 
-# --- humedad ---
 @pytest.mark.parametrize("texto, esperado", [("0", 0.0), ("45", 45.0), ("45.5", 45.5), ("100", 100.0), ("99.99", 99.99)])
 def test_humedad_valida_incluye_limites(texto, esperado):
     assert validaciones.validar_humedad(texto) == esperado
@@ -73,7 +68,6 @@ def test_humedad_rechaza_el_centinela_de_etapa_1():
         validaciones.validar_humedad("-1")
 
 
-# --- usuario ---
 def test_usuario_valido():
     assert validaciones.validar_usuario("nicole_96") == "nicole_96"
 

@@ -104,9 +104,16 @@ def consultar_mediciones(mediciones, config, hoy):
         print(f"Error: {error}")
         return
 
+    ordenar = input("¿Ordenar por humedad de mayor a menor? (s/n): ").strip().lower() == "s"
+
     hay_datos = False
-    for codigo, fechas in filtradas.items():
-        for fecha, humedad in fechas.items():
+    for codigo in filtradas:
+        valores = operaciones.getValuesPerSector(filtradas, codigo)
+        if ordenar:
+            pares = operaciones.orderHumidityValues(valores)
+        else:
+            pares = sorted(valores.items())
+        for fecha, humedad in pares:
             print(f"{fecha} | {codigo} ({config['sectores'][codigo]}) | {humedad}%")
             hay_datos = True
     if not hay_datos:

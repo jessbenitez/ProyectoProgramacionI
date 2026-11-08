@@ -94,3 +94,50 @@ def test_reporte_filtrado():
     assert "Frutillas" in resultado
     assert "2026-10-12: 15%" in resultado
     assert "Promedio del filtro: 38.33%" in resultado
+
+
+# 5. PRUEBAS ADICIONALES
+
+def test_reporte_sector_sin_mediciones():
+    resultado = reporte_sector(mediciones, sectores, "S03", limites, HOY, 28)
+
+    assert "Arándanos" in resultado
+    assert "Sin mediciones en el período" in resultado
+
+
+def test_reporte_sector_incluye_solo_sus_alertas():
+    resultado = reporte_sector(mediciones, sectores, "S01", limites, HOY, 28)
+
+    assert "ALERTA - 2026-10-12: 15%" in resultado
+    assert "85%" not in resultado
+
+
+def test_reporte_sector_ignora_mediciones_fuera_de_la_ventana():
+    con_antigua = {"S01": {"2026-10-14": 50, "2026-08-01": 10}}
+    resultado = reporte_sector(con_antigua, sectores, "S01", limites, HOY, 28)
+
+    assert "2026-08-01" not in resultado
+    assert "Humedad mínima: 50%" in resultado
+
+
+def test_reporte_alertas_sin_criticas():
+    sin_alertas = {"S01": {"2026-10-12": 20, "2026-10-13": 80}}
+    resultado = reporte_alertas(sin_alertas, sectores, limites)
+
+    assert "No se registraron mediciones críticas." in resultado
+
+
+def test_reporte_general_sin_mediciones():
+    vacias = {"S01": {}, "S02": {}}
+    resultado = reporte_general(vacias, sectores, limites, HOY)
+
+    assert "Sin mediciones registradas." in resultado
+    assert "Todos los sectores tienen mediciones." not in resultado
+
+
+def test_reporte_filtrado_sin_resultados():
+    filtro = {"codigo_sector": "S03"}
+    resultado = reporte_filtrado(mediciones, sectores, filtro)
+
+    assert "Sin mediciones para los filtros seleccionados." in resultado
+    assert "Promedio del filtro: Sin mediciones" in resultado

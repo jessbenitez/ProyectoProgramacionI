@@ -1,65 +1,110 @@
-# Lista de funciones del proyecto
+# Lista de funciones del proyecto (Etapa 2)
+
+Estructura de datos central: un **diccionario anidado** `mediciones[sector][fecha] = humedad` (por ejemplo `mediciones["S01"]["2026-10-12"] = 45.5`). Se carga desde `registros.csv` al iniciar y se vuelca al CSV al salir. La configuración (sectores, límites, ventana de días, rutas) viene de `configuracion.json` y se pasa por parámetro a las funciones.
 
 ## codigo/main.py
-Concentra el menú, toda la entrada/salida por consola y el punto de entrada del programa.
+Único módulo con `input()` y `print()`: login, menú, control de flujo y captura de excepciones.
 
-- [**main()**](codigo/main.py#L99): Orquesta el programa: normaliza y muestra el equipo, prueba las funciones de `perfil_equipo`, carga los datos iniciales del campo y lanza el menú.
-- [**pedir_sector_valido(nombres_sectores)**](codigo/main.py#L6): Pide por consola un número de sector válido (1-5) y lo devuelve como entero.
-- [**pedir_entero_positivo(mensaje)**](codigo/main.py#L15): Pide por consola un entero mayor o igual a 0, validando la entrada.
-- [**pedir_rango_ideal()**](codigo/main.py#L23): Pregunta si se quiere personalizar el rango ideal de humedad; devuelve `(ideal, tolerancia)` (por defecto 50, 10).
-- [**pedir_medicion(nombres_sectores, dias_semana)**](codigo/main.py#L32): Pide sector, día y humedad por consola (validando cada dato) y devuelve los tres valores como enteros.
-- [**menu(valores_actuales, nombres_sectores, dias_semana)**](codigo/main.py#L53): Bucle principal (`while opcion != "fin"`) que muestra las opciones al usuario y llama a `operaciones`/`datos` según la opción elegida, imprimiendo los resultados.
+- [**main()**](codigo/main.py#L287): Muestra los datos del equipo, carga configuración y usuarios, hace el login, carga el historial y lanza el menú. El guardado va en un `finally` para que también ocurra ante `Ctrl+C`.
+- [**pedir_dato(mensaje, validador)**](codigo/main.py#L13): Repite la pregunta hasta que el validador acepte el dato (captura el `ValueError` y muestra el mensaje con el formato esperado).
+- [**pedir_sector(config)**](codigo/main.py#L23), [**pedir_fecha(config, hoy)**](codigo/main.py#L29), [**pedir_humedad(mensaje)**](codigo/main.py#L34): Piden y validan cada dato usando `validaciones.py`.
+- [**pedir_credenciales()**](codigo/main.py#L38): Pide usuario y contraseña (se la pasa a `autenticar`).
+- [**registrar_nueva_medicion(mediciones, config, hoy)**](codigo/main.py#L44): Opción 1. Si ya existe la medición, muestra el error y sugiere usar "Modificar".
+- [**modificar_medicion_existente(mediciones, config, hoy)**](codigo/main.py#L56): Opción 2. Muestra el valor actual, pide el nuevo y confirma con `s/n` antes de reemplazar.
+- [**pedir_filtro(config, hoy)**](codigo/main.py#L76): Pregunta si filtrar por sector, fecha, rango o todo, y devuelve un diccionario para `filtrar_registros`.
+- [**consultar_mediciones(mediciones, config, hoy)**](codigo/main.py#L99): Opción 3. Muestra las mediciones filtradas y, si el usuario quiere, ordenadas por humedad de mayor a menor.
+- [**mostrar_indicadores(mediciones, config)**](codigo/main.py#L123): Opción 4. Máximo, mínimo, promedio total, por sector y por fecha.
+- [**mostrar_sectores_criticos(mediciones, config)**](codigo/main.py#L148): Opción 5. Sectores con promedio crítico y las mediciones críticas con fecha y valor.
+- [**mostrar_sectores_ideales(mediciones, config)**](codigo/main.py#L163): Opción 6. Sectores con promedio ideal.
+- [**mostrar_reporte_filtrado(mediciones, config, hoy)**](codigo/main.py#L175): Opción 7. Reporte filtrado con el promedio del filtro.
+- [**guardar_texto_reporte(carpeta, nombre_archivo, texto)**](codigo/main.py#L183): Escribe un reporte; si hay `OSError` informa cuál archivo falló y sigue con los demás.
+- [**mostrar_reporte_general(mediciones, config, hoy, carpeta_reportes)**](codigo/main.py#L195): Opción 8. Muestra el reporte general y lo guarda en `reporte_general.txt`.
+- [**generar_reportes_en_archivos(mediciones, config, hoy, carpeta_reportes)**](codigo/main.py#L201): Opción 9. Un archivo por sector de la configuración más el general.
+- [**menu(usuario, mediciones, config, hoy, carpeta_reportes)**](codigo/main.py#L211): Bucle principal (`while opcion != "fin"`) con `if/elif`.
+- [**guardar_con_reintento(ruta, mediciones)**](codigo/main.py#L252): Sobrescribe el CSV; si falla por `OSError` ofrece reintentar o salir sin guardar.
+- [**cargar_historial(ruta, config, hoy)**](codigo/main.py#L270): Lee el CSV al diccionario, informa las filas descartadas y, si el archivo no existe, arranca con historial vacío.
 
-## codigo/datos.py
-Solo datos: constantes, generación de la matriz inicial y formateo de texto (sin `print`).
+## codigo/validaciones.py
+Validan con **expresiones regulares** el formato y después la coherencia. Siempre **lanzan `ValueError`** con el formato esperado.
 
-- [**cargar_datos_iniciales()**](codigo/datos.py#L17): Genera la matriz de humedad (una fila por sector, una columna por día). Solo ~30% de las celdas arranca con medición (0-100); el resto queda en -1, para que siempre haya lugar donde registrar.
-- [**formatear_matriz(datos)**](codigo/datos.py#L29): Devuelve el string con la matriz de humedad en formato de tabla (sectores en filas, días en columnas), mostrando "Sin medición" en las celdas con -1.
-
-## codigo/perfil_equipo.py
-- [**normalizarNombres(nombres)**](codigo/perfil_equipo.py#L15): Devuelve la lista de nombres con formato título (`title()`).
-- [**uppercaseTitle(nombre_equipo)**](codigo/perfil_equipo.py#L18): Devuelve el nombre del equipo en mayúsculas.
-- [**cantidadCaracteres(nombre_equipo)**](codigo/perfil_equipo.py#L21): Devuelve la cantidad de caracteres del nombre del equipo.
-- [**generarSigla(nombre_equipo)**](codigo/perfil_equipo.py#L24): Genera una sigla tomando la inicial de cada palabra del nombre del equipo.
-- [**contiene_digitos(texto)**](codigo/perfil_equipo.py#L29): Recorre el texto carácter por carácter y devuelve `True` si contiene al menos un dígito.
+- [**validar_fecha(fecha, fecha_referencia, ventana_dias)**](codigo/validaciones.py#L6): Formato `AAAA-MM-DD`, fecha real (`strptime`, rechaza `2026-02-30`) y dentro de la ventana de 28 días sin fechas futuras. La fecha de referencia llega por parámetro.
+- [**validar_codigo_sector(codigo, sectores)**](codigo/validaciones.py#L26): Formato `S##` y que exista en la configuración.
+- [**validar_humedad(humedad)**](codigo/validaciones.py#L35): Número con hasta 2 decimales y rango 0-100. Ya no acepta `-1`.
+- [**validar_usuario(usuario)**](codigo/validaciones.py#L46): De 3 a 20 caracteres entre minúsculas, dígitos o guion bajo.
 
 ## codigo/operaciones.py
-Módulo de lógica pura: ninguna función usa `input()`/`print()` ni variables globales; todo se recibe por parámetro.
+Lógica pura: sin `input()`/`print()` ni variables globales.
 
-### Validaciones
-- [**validar_sector(sector, nombres_sectores)**](codigo/operaciones.py#L1): Verifica que el string sea un número entre 1 y `len(nombres_sectores)` (1-5).
-- [**validar_dia(dia, dias_semana)**](codigo/operaciones.py#L7): Verifica que el string sea un número entre 0 y `len(dias_semana) - 1` (0-6).
-- [**validar_humedad(humedad)**](codigo/operaciones.py#L13): Verifica que el string sea un número entre -1 y 100.
+### Registro y modificación
+- [**registrar_medicion(mediciones, sector, fecha, humedad)**](codigo/operaciones.py#L1): Agrega la medición al diccionario; si ya existe lanza `ValueError` (no pisa en silencio).
+- [**buscar_medicion(mediciones, sector, fecha)**](codigo/operaciones.py#L13): Devuelve la humedad o lanza `ValueError` si no existe.
+- [**modificar_medicion(mediciones, sector, fecha, nueva_humedad)**](codigo/operaciones.py#L20): Reemplaza solo esa medición; lanza `ValueError` si no existe.
 
-### Registro de mediciones
-- [**registrar_medicion(valores_actuales, id_sector, id_dia, humedad)**](codigo/operaciones.py#L19): Recibe sector/día/humedad ya validados (sector en 1-5), resta 1 solo al indexar la matriz, y registra el valor si la celda estaba en -1. Devuelve `(matriz, éxito, mensaje)`.
+### Indicadores
+- [**getMaxHumidityValue(mediciones)**](codigo/operaciones.py#L32) y [**getMinHumidityValue(mediciones)**](codigo/operaciones.py#L51): Máximo y mínimo de todas las mediciones (`None` si no hay).
+- [**getAverageHumidityPerSector(mediciones)**](codigo/operaciones.py#L75): Devuelve un diccionario `sector → promedio` (`None` si el sector no tiene mediciones).
+- [**getAverageHumidityTotal(mediciones)**](codigo/operaciones.py#L101): Promedio de todas las mediciones.
+- [**agrupar_por_fecha(mediciones)**](codigo/operaciones.py#L115): Reagrupa el diccionario por fecha y devuelve `fecha → promedio` (acumulador).
 
-### Indicadores generales
-- [**getMaxHumidityValue(sectores)**](codigo/operaciones.py#L29): Devuelve el valor máximo de humedad registrado en toda la matriz (ignorando -1).
-- [**getMinHumidityValue(sectores)**](codigo/operaciones.py#L34): Devuelve el valor mínimo de humedad registrado en toda la matriz (ignorando -1).
-- [**getAverageHumidityPerSector(sectores)**](codigo/operaciones.py#L39): Devuelve una lista con el promedio de humedad de cada sector (-1 si no tiene mediciones).
-- [**getAverageHumidityTotal(sectores)**](codigo/operaciones.py#L50): Devuelve el promedio general de humedad de todo el campo.
+### Críticos e ideales
+- [**es_critica(humedad, limites)**](codigo/operaciones.py#L139): `True` si es menor que `critico_bajo` o mayor que `critico_alto`. Los valores 20 y 80 **no** son críticos.
+- [**es_ideal(humedad, limites)**](codigo/operaciones.py#L147): `True` si está entre `ideal_bajo` e `ideal_alto`, inclusive (40 y 60 son ideales).
+- [**getCriticalValues(promedios_por_sector, limites)**](codigo/operaciones.py#L172): Lista de **códigos de sector** cuyo promedio es crítico (comprensión de listas).
+- [**getIdealValues(promedios_por_sector, limites)**](codigo/operaciones.py#L184): Lista de códigos de sector cuyo promedio es ideal.
+- [**obtener_mediciones_criticas(mediciones, limites)**](codigo/operaciones.py#L196): Por sector, solo las mediciones individuales críticas (las alertas). Usa una comprensión de diccionarios.
 
-### Consulta por sector
-- [**getValuesPerSector(sectores, id_sector)**](codigo/operaciones.py#L57): Devuelve la fila de mediciones correspondiente a un sector dado (ID 1-5).
-- [**orderHumidityValues(sector_id)**](codigo/operaciones.py#L60): Devuelve las mediciones válidas de un sector ordenadas de mayor a menor.
-- [**formatear_detalle_sector(sectores, id_sector, nombres_sectores, dias_semana)**](codigo/operaciones.py#L64): Arma el string con las mediciones diarias de un sector, sus valores ordenados y el top 3 más alto (usando slicing).
+### Consultas
+- [**getValuesPerSector(mediciones, codigo_sector)**](codigo/operaciones.py#L151): Devuelve una **copia** de las mediciones de un sector.
+- [**orderHumidityValues(valores_sector, descendente=True)**](codigo/operaciones.py#L161): Ordena por humedad con `sorted` y una expresión `lambda`.
+- [**filtrar_registros(mediciones, codigo_sector, desde, hasta)**](codigo/operaciones.py#L209): Filtra por sector, fecha o rango y devuelve un diccionario nuevo con la misma forma.
 
-### Sectores críticos e ideales
-- [**formatear_sectores_criticos(sectores, nombres_sectores)**](codigo/operaciones.py#L83): Arma el string con los sectores cuyo promedio está en rango crítico (<20% o >80%).
-- [**formatear_sectores_ideales(sectores, nombres_sectores, ideal_target, tolerancia)**](codigo/operaciones.py#L97): Arma el string con los sectores cuyo promedio cae dentro del rango ideal pedido.
-- [**getIdealValues(sectores, ideal_bajo=40.0, ideal_alto=60.0)**](codigo/operaciones.py#L114): A partir de una lista de promedios por sector, devuelve los valores que caen dentro del rango ideal (inclusive: `>=` y `<=`).
-- [**getCriticalValues(sectores, limite_bajo=20.0, limite_alto=80.0)**](codigo/operaciones.py#L136): A partir de una lista de promedios por sector, devuelve los valores fuera del rango normal (críticos).
+## codigo/reportes.py
+Arma los reportes como **strings** (sin entrada/salida). Los escribe `archivos.py`.
 
-### Reporte final
-- [**generar_reporte_final(sectores, nombres_sectores, dias_semana)**](codigo/operaciones.py#L157): Arma el string del reporte semanal completo (indicadores generales, promedio por sector, sectores críticos e ideales).
+- [**reporte_filtrado(mediciones, sectores, filtro)**](codigo/reportes.py#L19): Mediciones del filtro con su promedio.
+- [**reporte_sector(mediciones, sectores, codigo_sector, limites, fecha_referencia, ventana_dias)**](codigo/reportes.py#L49): Período, mediciones ordenadas, máximo, mínimo, promedio, estado (crítico / ideal / fuera del rango ideal) y alertas del sector. Si no hay datos dice "Sin mediciones en el período".
+- [**reporte_general(mediciones, sectores, limites, fecha_referencia)**](codigo/reportes.py#L134): Indicadores del campo, promedio por sector y por fecha, sectores críticos, alertas consolidadas y sectores sin mediciones.
+- [**reporte_alertas(mediciones, sectores, limites)**](codigo/reportes.py#L219): Mediciones críticas con fecha y valor, agrupadas por sector.
+
+## codigo/archivos.py
+Lectura y escritura de CSV, JSON y texto. Lanza excepciones de E/S; las captura `main.py`.
+
+- [**campos_csv()**](codigo/archivos.py#L8): Encabezado del CSV (`fecha,sector,humedad`), definido en una función para no usar variables globales.
+- [**cargar_configuracion(ruta)**](codigo/archivos.py#L13): Lee `configuracion.json` y valida claves y valores; no lo reemplaza en silencio. Lanza `FileNotFoundError`, `json.JSONDecodeError`, `KeyError` o `ValueError`.
+- [**cargar_registros(ruta, sectores, fecha_referencia, ventana_dias)**](codigo/archivos.py#L45): Lee el CSV al diccionario. Devuelve también la lista de filas rechazadas (inválidas, duplicadas o fuera de la ventana) con línea y motivo; ante un duplicado conserva la primera.
+- [**guardar_registros(ruta, mediciones)**](codigo/archivos.py#L81): Sobrescribe el CSV con el diccionario, ordenado por fecha y sector, con encabezado.
+- [**guardar_reporte(ruta, texto)**](codigo/archivos.py#L92): Escribe un archivo de texto y crea la carpeta si falta.
+
+## codigo/autenticacion.py
+- [**cargar_usuarios(ruta)**](codigo/autenticacion.py#L11): Lee `usuarios.json` y devuelve `usuario → contraseña`.
+- [**validar_credenciales(usuarios, usuario, contrasena)**](codigo/autenticacion.py#L34): `True` si coincide; lanza `ValueError` si el usuario tiene formato inválido.
+- [**autenticar(usuarios, pedir_credenciales, informar, max_intentos=3)**](codigo/autenticacion.py#L40): Repite el login hasta 3 intentos; si se agotan lanza `AccesoDenegado`. Recibe funciones por parámetro para no usar `input()`/`print()`.
+
+## codigo/perfil_equipo.py
+- [**normalizarNombres(nombres)**](codigo/perfil_equipo.py#L15): Nombres con formato título (`title()`).
+- [**uppercaseTitle(nombre_equipo)**](codigo/perfil_equipo.py#L18): Nombre del equipo en mayúsculas.
+- [**cantidadCaracteres(nombre_equipo)**](codigo/perfil_equipo.py#L21): Cantidad de caracteres del nombre.
+- [**generarSigla(nombre_equipo)**](codigo/perfil_equipo.py#L24): Sigla con la inicial de cada palabra.
+- [**contiene_digitos(texto)**](codigo/perfil_equipo.py#L29): `True` si el texto tiene al menos un dígito.
+
+## codigo/generar_demo.py
+- [**generar_mediciones(sectores, hoy, ventana_dias)**](codigo/generar_demo.py#L14): Arma datos de demostración con fechas relativas a hoy (críticos, ideales, valores límite, un registro anterior a la ventana y un sector sin datos).
+- [**filas_invalidas(hoy, ventana_dias)**](codigo/generar_demo.py#L45): Filas con errores para `registros_con_errores.csv`.
+- [**main()**](codigo/generar_demo.py#L60): Escribe `registros.csv` y `registros_con_errores.csv`.
 
 ---
 
 ## Notas para el examen oral
-- `getIdealValues` y `getCriticalValues` reciben una **lista de promedios**, no la matriz completa. **Pendiente de corrección:** ambas devuelven los *valores* de promedio que cumplen la condición, no los *índices* de sector — por eso las funciones que arman el texto (`formatear_sectores_criticos`, `formatear_sectores_ideales`, `generar_reporte_final`) todavía pueden mostrar un nombre de sector que no corresponde al promedio real (usan la posición dentro de la lista filtrada, no el índice real del sector). Es la próxima corrección pendiente.
-- El ID de sector es consistente en todo el proyecto: se pide y valida como 1-5, y solo se resta 1 al indexar la matriz (en `registrar_medicion` y `getValuesPerSector`).
-- El rango ideal (40-60%) es inclusivo: 40 y 60 exactos cuentan como ideal.
-- El valor `-1` se usa como marca de "sin medición" en toda la matriz de humedad, y se excluye de todos los cálculos.
-- La matriz inicial se genera con ~30% de probabilidad de tener medición por celda, para que siempre queden celdas en -1 disponibles para registrar.
-- El archivo `principal.py` (residual, solo imprimía un mensaje de prueba) fue eliminado por no usarse en el flujo del programa.
+- **¿Por qué un diccionario en vez de la matriz?** La matriz cubría una sola semana y usaba `-1` como "sin medición", que había que filtrar en cada cálculo. Con `mediciones[sector][fecha]` el sentido está en las claves, y una medición que no existe simplemente no tiene clave.
+- **Unicidad:** un sector admite una sola medición por fecha, y esto lo garantiza la propia estructura (no puede haber dos claves iguales). Registrar nunca pisa un valor: para corregir hay que usar "Modificar", con confirmación.
+- **Lectura una vez, escritura una vez:** el CSV se lee al iniciar y se sobrescribe al salir. Durante la ejecución todo trabaja sobre el diccionario. El guardado está en un `finally`, así que también se guarda ante `Ctrl+C`.
+- **Ventana de 28 días:** solo se aceptan fechas entre hoy menos 27 días y hoy. Las filas más viejas se informan al cargar y, al guardar, desaparecen del CSV (riesgo aceptado por el equipo). El valor está en `configuracion.json`.
+- **Fecha de referencia por parámetro:** las funciones no llaman a `date.today()`; reciben la fecha, y así las pruebas dan siempre el mismo resultado.
+- **Excepciones:** las funciones de validación y de archivos **lanzan** y `main.py` **captura**, en vez de devolver `True/False` como en la Etapa 1. El mensaje siempre dice qué formato se esperaba.
+- **Regex:** validan la estructura (por ejemplo `S[0-9]{2}`) y después se verifica la coherencia (que el sector exista, que la fecha sea real, el rango 0-100).
+- **Críticos e ideales:** 20 y 80 **no** son críticos (la condición es `<` y `>`); 40 y 60 **sí** son ideales (`<=`). `getCriticalValues` e `getIdealValues` trabajan sobre el **promedio de cada sector** y devuelven códigos de sector. Las alertas de mediciones individuales las calcula `obtener_mediciones_criticas`.
+- **Sin variables globales:** todo se pasa por parámetro. Hasta las constantes (como los campos del CSV) se definen dentro de funciones.
+- **Contraseñas en texto plano:** decisión de alcance de la materia; en un sistema real se guardarían con hash.
+- **Pruebas:** hay un archivo `test_*.py` por módulo, 124 en total (`python -m pytest` dentro de `codigo`). No usan `input()` y los archivos se prueban con `tmp_path`.
+- **Lo que no se implementó:** recursividad y conjuntos, que son optativos en los lineamientos.
+- **Archivos eliminados:** `datos.py` (sus constantes pasaron a `configuracion.json`) e `interfaz.py` (no estaba en el alcance).

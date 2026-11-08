@@ -1,4 +1,3 @@
-# Pruebas de operaciones.py (registro y modificación de mediciones)
 import pytest
 
 import operaciones
@@ -167,9 +166,6 @@ def test_filtrar_sector_inexistente_lanza_excepcion():
         operaciones.filtrar_registros(datos_mediciones(), codigo_sector="S09")
 
         
-# ==========================================================
-# PRUEBAS DE INDICADORES ADAPTADOS A DICCIONARIOS (H5)
-# ==========================================================
 
 def test_humedad_maxima_global():
     mediciones = {

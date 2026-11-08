@@ -1,4 +1,3 @@
-# Pruebas de archivos.py
 import json
 from datetime import date
 
@@ -33,7 +32,6 @@ def config_valida():
     }
 
 
-# --- configuración ---
 def test_cargar_configuracion_valida(tmp_path):
     ruta = escribir(tmp_path / "c.json", json.dumps(config_valida()))
     assert archivos.cargar_configuracion(ruta)["ventana_dias"] == 28
@@ -74,7 +72,6 @@ def test_cargar_configuracion_ventana_invalida(tmp_path):
         archivos.cargar_configuracion(ruta)
 
 
-# --- cargar registros ---
 def test_cargar_registros_validos(tmp_path):
     ruta = escribir(tmp_path / "r.csv", datos_encabezado() + "2026-10-12,S01,45.5\n2026-10-13,S02,80\n")
     mediciones, rechazadas = archivos.cargar_registros(ruta, datos_sectores(), datos_hoy(), 28)
@@ -107,13 +104,13 @@ def test_cargar_registros_archivo_vacio(tmp_path):
 
 def test_cargar_registros_filas_invalidas_no_pierden_las_validas(tmp_path):
     ruta = escribir(tmp_path / "r.csv", datos_encabezado()
-                    + "2026-10-12,S01,45.5\n"      # válida
-                    + "2026-10-13,S09,50\n"        # sector inexistente
-                    + "2026-02-30,S01,50\n"        # fecha inexistente
-                    + "2026-10-13,S01,150\n"       # humedad fuera de rango
-                    + "2026-10-13,S01\n"           # faltan columnas
-                    + "2026-10-13,S01,50,extra\n"  # sobran columnas
-                    + "2026-10-14,S02,60\n")       # válida
+                    + "2026-10-12,S01,45.5\n"
+                    + "2026-10-13,S09,50\n"
+                    + "2026-02-30,S01,50\n"
+                    + "2026-10-13,S01,150\n"
+                    + "2026-10-13,S01\n"
+                    + "2026-10-13,S01,50,extra\n"
+                    + "2026-10-14,S02,60\n")
     mediciones, rechazadas = archivos.cargar_registros(ruta, datos_sectores(), datos_hoy(), 28)
     assert mediciones == {"S01": {"2026-10-12": 45.5}, "S02": {"2026-10-14": 60.0}}
     assert len(rechazadas) == 5
@@ -134,7 +131,6 @@ def test_cargar_registros_duplicado_conserva_el_primero(tmp_path):
     assert len(rechazadas) == 1 and "duplicada" in rechazadas[0]
 
 
-# --- guardar registros ---
 def test_guardar_registros_ordena_por_fecha_y_sector(tmp_path):
     ruta = str(tmp_path / "r.csv")
     mediciones = {"S02": {"2026-10-12": 52.0, "2026-10-10": 30.0}, "S01": {"2026-10-12": 45.5}}
@@ -164,7 +160,6 @@ def test_guardar_y_cargar_devuelve_el_mismo_diccionario(tmp_path):
     assert rechazadas == []
 
 
-# --- guardar reporte ---
 def test_guardar_reporte_crea_la_carpeta(tmp_path):
     ruta = str(tmp_path / "salida" / "reportes" / "reporte_S01.txt")
     archivos.guardar_reporte(ruta, "Sector Frutillas: Sin mediciones en el período\n")

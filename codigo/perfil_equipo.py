@@ -1,16 +1,3 @@
-""" • Normalizar los nombres con title().
-• Convertir el nombre del equipo a mayúsculas.
-• Informar la cantidad de caracteres del nombre del equipo.
-• Generar una sigla con la inicial de cada palabra.
-• Verificar si el nombre del equipo contiene al menos un dígito recorriendo sus caracteres y utilizando isdigit().
-• Mostrar toda la información mediante f-strings.
-• Mantener las operaciones de procesamiento dentro de funciones y la entrada/salida general en el programa principal.
-def contiene_digitos(texto):
- val= False
- for caracter in texto:
- if caracter.isdigit():
- val= True
- return val """
 
 def normalizarNombres(nombres):
     return [nombre.title() for nombre in nombres]

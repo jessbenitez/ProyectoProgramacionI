@@ -1,4 +1,3 @@
-# Pruebas de reportes.py
 from datetime import date
 
 from reportes import (
@@ -7,9 +6,6 @@ from reportes import (
     reporte_general,
     reporte_alertas
 )
-
-# DATOS FICTICIOS PARA LAS PRUEBAS
-
 
 def datos_mediciones():
     return {
@@ -47,7 +43,6 @@ def datos_limites():
     }
 
 
-# 1. PRUEBA DEL REPORTE DE ALERTAS
 
 def test_reporte_alertas():
     resultado = reporte_alertas(datos_mediciones(), datos_sectores(), datos_limites())
@@ -58,7 +53,6 @@ def test_reporte_alertas():
     assert "2026-10-12: 85%" in resultado
 
 
-# 2. PRUEBA DEL REPORTE POR SECTOR
 
 def test_reporte_sector():
     resultado = reporte_sector(
@@ -76,7 +70,6 @@ def test_reporte_sector():
     assert "ALERTA" in resultado
 
 
-# 3. PRUEBA DEL REPORTE GENERAL
 
 def test_reporte_general():
     resultado = reporte_general(datos_mediciones(), datos_sectores(), datos_limites(), datos_hoy())
@@ -88,7 +81,6 @@ def test_reporte_general():
     assert "Arándanos (S03)" in resultado
 
 
-# 4. PRUEBA DEL REPORTE FILTRADO
 
 def test_reporte_filtrado():
     filtro = {
@@ -104,7 +96,6 @@ def test_reporte_filtrado():
     assert "Promedio del filtro: 38.33%" in resultado
 
 
-# 5. PRUEBAS ADICIONALES
 
 def test_reporte_sector_sin_mediciones():
     resultado = reporte_sector(datos_mediciones(), datos_sectores(), "S03", datos_limites(), datos_hoy(), 28)

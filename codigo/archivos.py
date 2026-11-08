@@ -5,7 +5,9 @@ import os
 
 import validaciones
 
-CAMPOS_CSV = ("fecha", "sector", "humedad")
+def campos_csv():
+    """Campos del CSV de registros, en el orden en que se leen y se escriben."""
+    return ("fecha", "sector", "humedad")
 
 
 def cargar_configuracion(ruta):
@@ -53,8 +55,8 @@ def cargar_registros(ruta, sectores, fecha_referencia, ventana_dias):
 
     with open(ruta, "r", encoding="utf-8", newline="") as archivo:
         lector = csv.DictReader(archivo)
-        if lector.fieldnames is None or tuple(lector.fieldnames) != CAMPOS_CSV:
-            raise ValueError(f"Encabezado de CSV inválido: se esperaba {','.join(CAMPOS_CSV)}")
+        if lector.fieldnames is None or tuple(lector.fieldnames) != campos_csv():
+            raise ValueError(f"Encabezado de CSV inválido: se esperaba {','.join(campos_csv())}")
 
         for fila in lector:
             linea = lector.line_num
@@ -81,7 +83,7 @@ def guardar_registros(ruta, mediciones):
     claves = sorted((fecha, sector) for sector, fechas in mediciones.items() for fecha in fechas)
 
     with open(ruta, "w", encoding="utf-8", newline="") as archivo:
-        escritor = csv.DictWriter(archivo, fieldnames=CAMPOS_CSV, lineterminator="\n")
+        escritor = csv.DictWriter(archivo, fieldnames=campos_csv(), lineterminator="\n")
         escritor.writeheader()
         for fecha, sector in claves:
             escritor.writerow({"fecha": fecha, "sector": sector, "humedad": mediciones[sector][fecha]})

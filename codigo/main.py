@@ -88,17 +88,16 @@ def menu(mediciones, config, hoy):
         print("fin. Salir (guarda los cambios en el archivo de registros)")
         opcion = input("Ingrese opción: ").strip().lower()
 
-        match opcion:
-            case "fin":
-                pass
-            case "1":
-                registrar_nueva_medicion(mediciones, config, hoy)
-            case "2":
-                modificar_medicion_existente(mediciones, config, hoy)
-            case "3" | "4" | "5" | "6" | "7" | "8" | "9":
-                print("Opción todavía no disponible: falta adaptarla al nuevo modelo de datos.")
-            case _:
-                print("Opción inválida")
+        if opcion == "fin":
+            pass
+        elif opcion == "1":
+            registrar_nueva_medicion(mediciones, config, hoy)
+        elif opcion == "2":
+            modificar_medicion_existente(mediciones, config, hoy)
+        elif opcion in ("3", "4", "5", "6", "7", "8", "9"):
+            print("Opción todavía no disponible: falta adaptarla al nuevo modelo de datos.")
+        else:
+            print("Opción inválida")
 
 
 def guardar_con_reintento(ruta, mediciones):

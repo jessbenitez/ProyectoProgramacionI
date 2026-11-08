@@ -6,6 +6,7 @@ import archivos
 import autenticacion
 import operaciones
 import perfil_equipo
+import reportes
 import validaciones
 
 
@@ -72,7 +73,135 @@ def modificar_medicion_existente(mediciones, config, hoy):
     print("Medición modificada correctamente (se guardará en el archivo al salir).")
 
 
-def menu(mediciones, config, hoy):
+def pedir_filtro(config, hoy):
+    """Pregunta por qué filtrar y devuelve un diccionario para filtrar_registros."""
+    print("Filtrar por:")
+    print("1. Sector")
+    print("2. Fecha")
+    print("3. Rango de fechas")
+    print("4. Todo el historial")
+    opcion = input("Ingrese opción: ").strip()
+
+    if opcion == "1":
+        return {"codigo_sector": pedir_sector(config)}
+    if opcion == "2":
+        fecha = pedir_fecha(config, hoy)
+        return {"desde": fecha, "hasta": fecha}
+    if opcion == "3":
+        desde = pedir_fecha(config, hoy)
+        hasta = pedir_fecha(config, hoy)
+        return {"desde": desde, "hasta": hasta}
+    if opcion == "4":
+        return {}
+    raise ValueError("Opción de filtro inválida: se esperaba 1, 2, 3 o 4")
+
+
+def consultar_mediciones(mediciones, config, hoy):
+    try:
+        filtro = pedir_filtro(config, hoy)
+        filtradas = operaciones.filtrar_registros(mediciones, **filtro)
+    except ValueError as error:
+        print(f"Error: {error}")
+        return
+
+    hay_datos = False
+    for codigo, fechas in filtradas.items():
+        for fecha, humedad in fechas.items():
+            print(f"{fecha} | {codigo} ({config['sectores'][codigo]}) | {humedad}%")
+            hay_datos = True
+    if not hay_datos:
+        print("No hay mediciones para el filtro indicado.")
+
+
+def mostrar_indicadores(mediciones, config):
+    maximo = operaciones.getMaxHumidityValue(mediciones)
+    if maximo is None:
+        print("No hay mediciones registradas.")
+        return
+
+    print(f"Humedad máxima: {maximo}%")
+    print(f"Humedad mínima: {operaciones.getMinHumidityValue(mediciones)}%")
+    print(f"Humedad promedio total: {operaciones.getAverageHumidityTotal(mediciones):.2f}%")
+
+    print("\nPromedio por sector:")
+    promedios = operaciones.getAverageHumidityPerSector(mediciones)
+    for codigo, promedio in promedios.items():
+        nombre = config["sectores"][codigo]
+        if promedio is None:
+            print(f"{codigo} ({nombre}): sin mediciones")
+        else:
+            print(f"{codigo} ({nombre}): {promedio:.2f}%")
+
+    print("\nPromedio por fecha:")
+    por_fecha = operaciones.agrupar_por_fecha(mediciones)
+    for fecha in sorted(por_fecha):
+        print(f"{fecha}: {por_fecha[fecha]:.2f}%")
+
+
+def mostrar_sectores_criticos(mediciones, config):
+    promedios = operaciones.getAverageHumidityPerSector(mediciones)
+    criticos = operaciones.getCriticalValues(promedios, config["limites"])
+
+    print("Sectores con promedio crítico:")
+    if criticos:
+        for codigo in criticos:
+            print(f"{codigo} ({config['sectores'][codigo]}): {promedios[codigo]:.2f}%")
+    else:
+        print("Ninguno.")
+
+    print()
+    print(reportes.reporte_alertas(mediciones, config["sectores"], config["limites"]))
+
+
+def mostrar_sectores_ideales(mediciones, config):
+    promedios = operaciones.getAverageHumidityPerSector(mediciones)
+    ideales = operaciones.getIdealValues(promedios, config["limites"])
+
+    print("Sectores con promedio ideal:")
+    if ideales:
+        for codigo in ideales:
+            print(f"{codigo} ({config['sectores'][codigo]}): {promedios[codigo]:.2f}%")
+    else:
+        print("Ninguno.")
+
+
+def mostrar_reporte_filtrado(mediciones, config, hoy):
+    try:
+        filtro = pedir_filtro(config, hoy)
+        print(reportes.reporte_filtrado(mediciones, config["sectores"], filtro))
+    except ValueError as error:
+        print(f"Error: {error}")
+
+
+def guardar_texto_reporte(carpeta, nombre_archivo, texto):
+    """Escribe un reporte; ante un error informa cuál falló y sigue. Devuelve True si se pudo escribir."""
+    ruta = os.path.join(carpeta, nombre_archivo)
+    try:
+        archivos.guardar_reporte(ruta, texto)
+    except OSError as error:
+        print(f"Error al escribir {nombre_archivo}: {error}")
+        return False
+    print(f"Reporte generado: {ruta}")
+    return True
+
+
+def mostrar_reporte_general(mediciones, config, hoy, carpeta_reportes):
+    texto = reportes.reporte_general(mediciones, config["sectores"], config["limites"], hoy)
+    print(texto)
+    guardar_texto_reporte(carpeta_reportes, "reporte_general.txt", texto)
+
+
+def generar_reportes_en_archivos(mediciones, config, hoy, carpeta_reportes):
+    for codigo in config["sectores"]:
+        texto = reportes.reporte_sector(mediciones, config["sectores"], codigo, config["limites"],
+                                        hoy, config["ventana_dias"])
+        guardar_texto_reporte(carpeta_reportes, f"reporte_{codigo}.txt", texto)
+
+    texto = reportes.reporte_general(mediciones, config["sectores"], config["limites"], hoy)
+    guardar_texto_reporte(carpeta_reportes, "reporte_general.txt", texto)
+
+
+def menu(mediciones, config, hoy, carpeta_reportes):
     opcion = ""
     while opcion != "fin":
         print("\n=== SISTEMA DE MONITOREO DE HUMEDAD EN CULTIVOS ===")
@@ -94,8 +223,20 @@ def menu(mediciones, config, hoy):
             registrar_nueva_medicion(mediciones, config, hoy)
         elif opcion == "2":
             modificar_medicion_existente(mediciones, config, hoy)
-        elif opcion in ("3", "4", "5", "6", "7", "8", "9"):
-            print("Opción todavía no disponible: falta adaptarla al nuevo modelo de datos.")
+        elif opcion == "3":
+            consultar_mediciones(mediciones, config, hoy)
+        elif opcion == "4":
+            mostrar_indicadores(mediciones, config)
+        elif opcion == "5":
+            mostrar_sectores_criticos(mediciones, config)
+        elif opcion == "6":
+            mostrar_sectores_ideales(mediciones, config)
+        elif opcion == "7":
+            mostrar_reporte_filtrado(mediciones, config, hoy)
+        elif opcion == "8":
+            mostrar_reporte_general(mediciones, config, hoy, carpeta_reportes)
+        elif opcion == "9":
+            generar_reportes_en_archivos(mediciones, config, hoy, carpeta_reportes)
         else:
             print("Opción inválida")
 
@@ -185,13 +326,14 @@ def main():
     print(f"\nBienvenido/a, {usuario}.")
 
     ruta_registros = os.path.join(carpeta, config["archivos"]["registros"])
+    carpeta_reportes = os.path.join(carpeta, config["archivos"]["carpeta_reportes"])
     mediciones = cargar_historial(ruta_registros, config, hoy)
     if mediciones is None:
         return
 
     # El guardado va en finally para que también ocurra ante Ctrl+C o un error inesperado.
     try:
-        menu(mediciones, config, hoy)
+        menu(mediciones, config, hoy, carpeta_reportes)
     finally:
         guardar_con_reintento(ruta_registros, mediciones)
 

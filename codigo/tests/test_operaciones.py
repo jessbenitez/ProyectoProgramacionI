@@ -41,36 +41,39 @@ def test_modificar_medicion_inexistente_lanza_excepcion():
     assert mediciones == {"S01": {}}
 
 
-LIMITES = {"critico_bajo": 20, "ideal_bajo": 40, "ideal_alto": 60, "critico_alto": 80}
+def datos_limites():
+    return {"critico_bajo": 20, "ideal_bajo": 40, "ideal_alto": 60, "critico_alto": 80}
 
-MEDICIONES = {
-    "S01": {"2026-10-12": 45.5, "2026-10-10": 15.0, "2026-10-14": 85.0},
-    "S02": {"2026-10-12": 79.0, "2026-10-13": 20.0},
-    "S03": {},
-}
+
+def datos_mediciones():
+    return {
+        "S01": {"2026-10-12": 45.5, "2026-10-10": 15.0, "2026-10-14": 85.0},
+        "S02": {"2026-10-12": 79.0, "2026-10-13": 20.0},
+        "S03": {},
+    }
 
 
 def test_humedad_15_y_85_son_criticas():
-    assert operaciones.es_critica(15, LIMITES)
-    assert operaciones.es_critica(85, LIMITES)
+    assert operaciones.es_critica(15, datos_limites())
+    assert operaciones.es_critica(85, datos_limites())
 
 
 def test_limites_20_y_80_no_son_criticos():
-    assert not operaciones.es_critica(20, LIMITES)
-    assert not operaciones.es_critica(80, LIMITES)
-    assert operaciones.es_critica(19.99, LIMITES)
-    assert operaciones.es_critica(80.01, LIMITES)
+    assert not operaciones.es_critica(20, datos_limites())
+    assert not operaciones.es_critica(80, datos_limites())
+    assert operaciones.es_critica(19.99, datos_limites())
+    assert operaciones.es_critica(80.01, datos_limites())
 
 
 def test_limites_40_y_60_son_ideales():
-    assert operaciones.es_ideal(40, LIMITES)
-    assert operaciones.es_ideal(60, LIMITES)
-    assert not operaciones.es_ideal(39.99, LIMITES)
-    assert not operaciones.es_ideal(60.01, LIMITES)
+    assert operaciones.es_ideal(40, datos_limites())
+    assert operaciones.es_ideal(60, datos_limites())
+    assert not operaciones.es_ideal(39.99, datos_limites())
+    assert not operaciones.es_ideal(60.01, datos_limites())
 
 
 def test_values_per_sector_devuelve_las_mediciones_del_sector():
-    assert operaciones.getValuesPerSector(MEDICIONES, "S02") == {"2026-10-12": 79.0, "2026-10-13": 20.0}
+    assert operaciones.getValuesPerSector(datos_mediciones(), "S02") == {"2026-10-12": 79.0, "2026-10-13": 20.0}
 
 
 def test_values_per_sector_devuelve_una_copia():
@@ -82,16 +85,16 @@ def test_values_per_sector_devuelve_una_copia():
 
 def test_values_per_sector_inexistente_lanza_excepcion():
     with pytest.raises(ValueError):
-        operaciones.getValuesPerSector(MEDICIONES, "S09")
+        operaciones.getValuesPerSector(datos_mediciones(), "S09")
 
 
 def test_order_humidity_de_mayor_a_menor():
-    resultado = operaciones.orderHumidityValues(MEDICIONES["S01"])
+    resultado = operaciones.orderHumidityValues(datos_mediciones()["S01"])
     assert resultado == [("2026-10-14", 85.0), ("2026-10-12", 45.5), ("2026-10-10", 15.0)]
 
 
 def test_order_humidity_de_menor_a_mayor():
-    resultado = operaciones.orderHumidityValues(MEDICIONES["S01"], descendente=False)
+    resultado = operaciones.orderHumidityValues(datos_mediciones()["S01"], descendente=False)
     assert resultado == [("2026-10-10", 15.0), ("2026-10-12", 45.5), ("2026-10-14", 85.0)]
 
 
@@ -101,21 +104,21 @@ def test_order_humidity_sector_vacio():
 
 def test_critical_values_devuelve_codigos_de_sector():
     promedios = {"S01": 15.0, "S02": 50.0, "S03": 85.0, "S04": None, "S05": 20.0}
-    assert operaciones.getCriticalValues(promedios, LIMITES) == ["S01", "S03"]
+    assert operaciones.getCriticalValues(promedios, datos_limites()) == ["S01", "S03"]
 
 
 def test_ideal_values_devuelve_codigos_de_sector():
     promedios = {"S01": 40.0, "S02": 61.0, "S03": 60.0, "S04": None, "S05": 39.0}
-    assert operaciones.getIdealValues(promedios, LIMITES) == ["S01", "S03"]
+    assert operaciones.getIdealValues(promedios, datos_limites()) == ["S01", "S03"]
 
 
 def test_critical_e_ideal_sin_sectores():
-    assert operaciones.getCriticalValues({}, LIMITES) == []
-    assert operaciones.getIdealValues({}, LIMITES) == []
+    assert operaciones.getCriticalValues({}, datos_limites()) == []
+    assert operaciones.getIdealValues({}, datos_limites()) == []
 
 
 def test_mediciones_criticas_solo_incluye_las_del_sector_correspondiente():
-    alertas = operaciones.obtener_mediciones_criticas(MEDICIONES, LIMITES)
+    alertas = operaciones.obtener_mediciones_criticas(datos_mediciones(), datos_limites())
     assert alertas == {
         "S01": {"2026-10-10": 15.0, "2026-10-14": 85.0},
         "S02": {},
@@ -124,28 +127,28 @@ def test_mediciones_criticas_solo_incluye_las_del_sector_correspondiente():
 
 
 def test_filtrar_por_sector():
-    resultado = operaciones.filtrar_registros(MEDICIONES, codigo_sector="S02")
+    resultado = operaciones.filtrar_registros(datos_mediciones(), codigo_sector="S02")
     assert resultado == {"S02": {"2026-10-12": 79.0, "2026-10-13": 20.0}}
 
 
 def test_filtrar_por_una_fecha():
-    resultado = operaciones.filtrar_registros(MEDICIONES, desde="2026-10-12", hasta="2026-10-12")
+    resultado = operaciones.filtrar_registros(datos_mediciones(), desde="2026-10-12", hasta="2026-10-12")
     assert resultado == {"S01": {"2026-10-12": 45.5}, "S02": {"2026-10-12": 79.0}, "S03": {}}
 
 
 def test_filtrar_por_rango_incluye_los_bordes():
-    resultado = operaciones.filtrar_registros(MEDICIONES, codigo_sector="S01",
+    resultado = operaciones.filtrar_registros(datos_mediciones(), codigo_sector="S01",
                                               desde="2026-10-10", hasta="2026-10-12")
     assert resultado == {"S01": {"2026-10-10": 15.0, "2026-10-12": 45.5}}
 
 
 def test_filtrar_devuelve_fechas_ordenadas():
-    resultado = operaciones.filtrar_registros(MEDICIONES, codigo_sector="S01")
+    resultado = operaciones.filtrar_registros(datos_mediciones(), codigo_sector="S01")
     assert list(resultado["S01"]) == ["2026-10-10", "2026-10-12", "2026-10-14"]
 
 
 def test_filtrar_sin_criterios_devuelve_todo():
-    assert operaciones.filtrar_registros(MEDICIONES) == MEDICIONES
+    assert operaciones.filtrar_registros(datos_mediciones()) == datos_mediciones()
 
 
 def test_filtrar_no_modifica_el_original():
@@ -156,12 +159,12 @@ def test_filtrar_no_modifica_el_original():
 
 def test_filtrar_rango_invertido_lanza_excepcion():
     with pytest.raises(ValueError, match="Rango inválido"):
-        operaciones.filtrar_registros(MEDICIONES, desde="2026-10-14", hasta="2026-10-10")
+        operaciones.filtrar_registros(datos_mediciones(), desde="2026-10-14", hasta="2026-10-10")
 
 
 def test_filtrar_sector_inexistente_lanza_excepcion():
     with pytest.raises(ValueError):
-        operaciones.filtrar_registros(MEDICIONES, codigo_sector="S09")
+        operaciones.filtrar_registros(datos_mediciones(), codigo_sector="S09")
 
         
 # ==========================================================

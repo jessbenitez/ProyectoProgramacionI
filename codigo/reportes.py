@@ -1,5 +1,5 @@
 """Armado de reportes como strings (sin I/O). La escritura a archivo está en archivos.py."""
-from datetime import date, timedelta
+from datetime import timedelta
 
 from operaciones import (
     filtrar_registros,
@@ -46,27 +46,23 @@ def reporte_filtrado(mediciones, sectores, filtro):
     return "\n".join(lineas)
 
 #---------------------------------------------------------------------------------
-def reporte_sector(mediciones, sectores, codigo_sector, limites,fecha_referencia=None, ventana_dias=28):
-    """Genera el reporte individual de un sector."""
-    """Mediciones, indicadores y alertas de un sector."""
+def reporte_sector(mediciones, sectores, codigo_sector, limites, fecha_referencia, ventana_dias):
+    """Mediciones, indicadores y alertas de un sector dentro de la ventana.
+
+    fecha_referencia es un objeto date (normalmente hoy), recibido por parámetro.
+    """
 
     # 1. Obtenemos el nombre del sector
     nombre_sector = sectores[codigo_sector]
 
-    # 2. Definimos la fecha de referencia
-    if fecha_referencia is None:
-        fecha_referencia = date.today()
-    elif isinstance(fecha_referencia, str):
-        fecha_referencia = date.fromisoformat(fecha_referencia)
-
-    # 3. Calculamos el período de los últimos 28 días
+    # 2. Calculamos el período de los últimos 28 días
     fecha_desde = (
         fecha_referencia - timedelta(days=ventana_dias - 1)
     ).isoformat()
 
     fecha_hasta = fecha_referencia.isoformat()
 
-    # 4. Filtramos las mediciones del sector y del período
+    # 3. Filtramos las mediciones del sector y del período
     mediciones_filtradas = filtrar_registros(
         mediciones,
         codigo_sector=codigo_sector,
@@ -81,7 +77,7 @@ def reporte_sector(mediciones, sectores, codigo_sector, limites,fecha_referencia
     lineas.append(f"REPORTE DEL SECTOR: {nombre_sector}")
     lineas.append(f"Código: {codigo_sector}")
     lineas.append(f"Período: {fecha_desde} al {fecha_hasta}")
-    lineas.append(f"Generado: {date.today().isoformat()}")
+    lineas.append(f"Generado: {fecha_referencia.isoformat()}")
 
     # 6. Verificamos si existen mediciones
     if not mediciones_sector:
@@ -135,7 +131,7 @@ def reporte_sector(mediciones, sectores, codigo_sector, limites,fecha_referencia
     # 12. Devolvemos el reporte como texto
     return "\n".join(lineas)
 #---------------------------------------------------------------------------------
-def reporte_general(mediciones, sectores, limites):
+def reporte_general(mediciones, sectores, limites, fecha_referencia):
     """Indicadores de todo el campo, promedio por sector, alertas consolidadas y sectores sin mediciones."""
 
     # 1. Calculamos los indicadores generales
@@ -146,7 +142,7 @@ def reporte_general(mediciones, sectores, limites):
     lineas = []
     lineas.append("REPORTE GENERAL DEL CAMPO")
     lineas.append("=" * 40)
-    lineas.append(f"Fecha de generación: {date.today().isoformat()}")
+    lineas.append(f"Fecha de generación: {fecha_referencia.isoformat()}")
 
     # 2. Mostramos los indicadores generales
     lineas.append("\nINDICADORES GENERALES:")

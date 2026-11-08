@@ -17,23 +17,26 @@ def cargar_configuracion(ruta):
     with open(ruta, "r", encoding="utf-8") as archivo:
         config = json.load(archivo)
 
-    if not isinstance(config, dict):
-        raise ValueError("configuracion.json: se esperaba un objeto JSON")
+    try:
+        ##Verifico que existan todas las claves obligatorias y que tengan valores validos
+        for clave in ("sectores", "limites", "ventana_dias", "archivos"):
+            if clave not in config:
+                raise KeyError(f"configuracion.json: falta la clave '{clave}'")
+        for clave in ("critico_bajo", "ideal_bajo", "ideal_alto", "critico_alto"):
+            if clave not in config["limites"]:
+                raise KeyError(f"configuracion.json: falta el límite '{clave}'")
+        for clave in ("registros", "usuarios", "carpeta_reportes"):
+            if clave not in config["archivos"]:
+                raise KeyError(f"configuracion.json: falta el archivo '{clave}'")
 
-    for clave in ("sectores", "limites", "ventana_dias", "archivos"):
-        if clave not in config:
-            raise KeyError(f"configuracion.json: falta la clave '{clave}'")
-    for clave in ("critico_bajo", "ideal_bajo", "ideal_alto", "critico_alto"):
-        if clave not in config["limites"]:
-            raise KeyError(f"configuracion.json: falta el límite '{clave}'")
-    for clave in ("registros", "usuarios", "carpeta_reportes"):
-        if clave not in config["archivos"]:
-            raise KeyError(f"configuracion.json: falta el archivo '{clave}'")
-
-    if not isinstance(config["sectores"], dict) or not config["sectores"]:
-        raise ValueError("configuracion.json: 'sectores' debe ser un objeto no vacío")
-    if not isinstance(config["ventana_dias"], int) or config["ventana_dias"] < 1:
-        raise ValueError("configuracion.json: 'ventana_dias' debe ser un entero positivo")
+        codigos_sectores = list(config["sectores"].keys())
+        if not codigos_sectores:
+            raise ValueError("configuracion.json: debe haber al menos un sector")
+        if config["ventana_dias"] < 1:
+            raise ValueError("configuracion.json: 'ventana_dias' debe ser un número positivo")
+    except (TypeError, AttributeError):
+        # El JSON es válido pero algún valor no tiene la forma esperada (por ejemplo un texto donde va un número)
+        raise ValueError("configuracion.json: estructura inválida, revise que cada valor tenga el tipo esperado") from None
     return config
 
 

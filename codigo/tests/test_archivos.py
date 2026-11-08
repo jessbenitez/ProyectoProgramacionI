@@ -50,6 +50,14 @@ def test_cargar_configuracion_clave_faltante(tmp_path):
         archivos.cargar_configuracion(ruta)
 
 
+def test_cargar_configuracion_valor_con_tipo_incorrecto(tmp_path):
+    config = config_valida()
+    config["ventana_dias"] = "veintiocho"
+    ruta = escribir(tmp_path / "c.json", json.dumps(config))
+    with pytest.raises(ValueError):
+        archivos.cargar_configuracion(ruta)
+
+
 def test_cargar_configuracion_ventana_invalida(tmp_path):
     config = config_valida()
     config["ventana_dias"] = 0

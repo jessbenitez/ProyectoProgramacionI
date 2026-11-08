@@ -57,7 +57,7 @@ Módulo de lógica pura: ninguna función usa `input()`/`print()` ni variables g
 ---
 
 ## Notas para el examen oral
-- `getIdealValues` y `getCriticalValues` reciben una **lista de promedios**, no la matriz completa. **Pendiente de corrección:** ambas devuelven los *valores* de promedio que cumplen la condición, no los *índices* de sector — por eso las funciones que arman el texto (`formatear_sectores_criticos`, `formatear_sectores_ideales`, `generar_reporte_final`) todavía pueden mostrar un nombre de sector que no corresponde al promedio real (usan la posición dentro de la lista filtrada, no el índice real del sector). Es la próxima corrección pendiente.
+- `getIdealValues` y `getCriticalValues` reciben una **lista de promedios**, no la matriz completa, y devuelven los **índices** de sector que cumplen la condición (no los valores de promedio), de modo que las funciones que arman el texto muestran siempre el nombre de sector que corresponde.
 - El ID de sector es consistente en todo el proyecto: se pide y valida como 1-5, y solo se resta 1 al indexar la matriz (en `registrar_medicion` y `getValuesPerSector`).
 - El rango ideal (40-60%) es inclusivo: 40 y 60 exactos cuentan como ideal.
 - El valor `-1` se usa como marca de "sin medición" en toda la matriz de humedad, y se excluye de todos los cálculos.

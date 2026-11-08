@@ -40,7 +40,12 @@ def test_cargar_usuarios_sin_clave_usuarios(tmp_path):
         autenticacion.cargar_usuarios(escribir(tmp_path / "u.json", "{}"))
 
 
-@pytest.mark.parametrize("contenido", [{"usuarios": {}}, {"usuarios": {"nicole": 123}}, {"usuarios": {"nicole": ""}}, {"usuarios": []}])
+def test_cargar_usuarios_json_que_no_es_un_objeto(tmp_path):
+    with pytest.raises(ValueError):
+        autenticacion.cargar_usuarios(escribir(tmp_path / "u.json", "[1, 2, 3]"))
+
+
+@pytest.mark.parametrize("contenido", [{"usuarios": {}}, {"usuarios": {"nicole": ""}}, {"usuarios": []}, {"usuarios": 5}])
 def test_cargar_usuarios_contenido_invalido(tmp_path, contenido):
     with pytest.raises(ValueError):
         autenticacion.cargar_usuarios(escribir(tmp_path / "u.json", json.dumps(contenido)))

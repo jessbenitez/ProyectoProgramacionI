@@ -1,4 +1,5 @@
 # Pruebas de reportes.py
+from datetime import date
 
 from reportes import (
     reporte_filtrado,
@@ -28,6 +29,8 @@ sectores = {
     "S03": "Arándanos"
 }
 
+HOY = date(2026, 10, 14)
+
 limites = {
     "critico_bajo": 20,
     "ideal_bajo": 40,
@@ -55,7 +58,8 @@ def test_reporte_sector():
         sectores,
         "S01",
         limites,
-        fecha_referencia="2026-10-14"
+        HOY,
+        28
     )
 
     assert "Frutillas" in resultado
@@ -67,7 +71,7 @@ def test_reporte_sector():
 # 3. PRUEBA DEL REPORTE GENERAL
 
 def test_reporte_general():
-    resultado = reporte_general(mediciones, sectores, limites)
+    resultado = reporte_general(mediciones, sectores, limites, HOY)
 
     assert "REPORTE GENERAL DEL CAMPO" in resultado
     assert "PROMEDIO POR SECTOR" in resultado

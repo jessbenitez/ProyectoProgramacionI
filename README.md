@@ -71,6 +71,7 @@ codigo/
 ├── autenticacion.py   # Login contra usuarios.json
 ├── perfil_equipo.py   # Se conserva de la Etapa 1
 ├── generar_demo.py    # Regenera los datos de demostración
+├── resultados_pytest.txt  # Salida de pytest como evidencia
 ├── datos/
 │   ├── configuracion.json
 │   ├── usuarios.json
@@ -80,7 +81,7 @@ codigo/
 └── tests/             # test_validaciones, test_operaciones, test_reportes, test_archivos, test_autenticacion
 ```
 
-No hay variables globales: todo lo que una función necesita (configuración, mediciones, fecha de referencia) se pasa por parámetro.
+No hay variables globales, ni siquiera constantes a nivel de módulo: todo lo que una función necesita (configuración, mediciones, fecha de referencia) se pasa por parámetro, y los datos fijos se definen dentro de funciones.
 
 ---
 
@@ -98,7 +99,7 @@ No hay variables globales: todo lo que una función necesita (configuración, me
 |--------|--------|
 | 1 | Registrar nueva medición (no pisa una existente) |
 | 2 | Modificar medición existente (con confirmación) |
-| 3 | Consultar mediciones por sector, fecha, rango o todo el historial |
+| 3 | Consultar mediciones por sector, fecha, rango o todo el historial (opcionalmente ordenadas por humedad) |
 | 4 | Indicadores generales: máximo, mínimo, promedio total, por sector y por fecha |
 | 5 | Sectores críticos (promedio) y alertas de mediciones críticas |
 | 6 | Sectores ideales |
@@ -133,7 +134,7 @@ cd codigo
 python -m pytest
 ```
 
-Hay un archivo de pruebas por módulo. Los archivos se prueban con `tmp_path` y las pruebas no usan `input()`. Cubren: validación correcta e incorrecta, cálculos con resultado conocido, agrupación por fecha, detección de críticos, modificación de mediciones, casos límite (20, 40, 60, 80 y bordes de la ventana), reportes, persistencia (ida y vuelta CSV) y login.
+Hay 124 pruebas, con un archivo por módulo. Los archivos se prueban con `tmp_path` y las pruebas no usan `input()`. Cubren: validación correcta e incorrecta, cálculos con resultado conocido, agrupación por fecha, detección de críticos, modificación de mediciones, casos límite (20, 40, 60, 80 y bordes de la ventana), reportes, persistencia (ida y vuelta CSV) y login.
 
 ---
 
@@ -143,3 +144,4 @@ Hay un archivo de pruebas por módulo. Los archivos se prueban con `tmp_path` y 
 * El CSV se sobrescribe directamente, sin archivo temporal ni respaldo.
 * Si el programa se cierra de forma anormal (corte de luz) se pierde la sesión.
 * Recursividad y conjuntos (optativos) **no se implementaron**.
+* `examen_oral.md` lista todas las funciones del proyecto con su explicación, para preparar la defensa.

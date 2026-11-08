@@ -10,33 +10,33 @@ from datetime import date, timedelta
 
 import archivos
 
-# Cada sector tiene distinta cantidad de mediciones: se registra cada N días hacia atrás. S05 queda sin datos.
-PASO_POR_SECTOR = {"S01": 1, "S02": 2, "S03": 4}
-DIAS_FIJOS_S04 = (0, 13, 27)
-
-# (sector, días hacia atrás desde hoy) -> humedad. Cubre críticos, ideales y valores límite.
-VALORES_FIJOS = {
-    ("S01", 27): 20, ("S01", 20): 40, ("S01", 13): 60, ("S01", 6): 80,
-    ("S01", 2): 12.5, ("S01", 9): 91.0,
-    ("S02", 0): 15, ("S02", 8): 85.5,
-    ("S03", 4): 18.25,
-    ("S04", 13): 79.9,
-}
-
 
 def generar_mediciones(sectores, hoy, ventana_dias):
+    # Cada sector tiene distinta cantidad de mediciones: se registra cada N días hacia atrás. S05 queda sin datos.
+    paso_por_sector = {"S01": 1, "S02": 2, "S03": 4}
+    dias_fijos_s04 = (0, 13, 27)
+
+    # (sector, días hacia atrás desde hoy) -> humedad. Cubre críticos, ideales y valores límite.
+    valores_fijos = {
+        ("S01", 27): 20, ("S01", 20): 40, ("S01", 13): 60, ("S01", 6): 80,
+        ("S01", 2): 12.5, ("S01", 9): 91.0,
+        ("S02", 0): 15, ("S02", 8): 85.5,
+        ("S03", 4): 18.25,
+        ("S04", 13): 79.9,
+    }
+
     rng = random.Random(404)  # semilla fija: mismos valores en cada regeneración
     mediciones = {codigo: {} for codigo in sectores}
     for sector in sectores:
-        if sector in PASO_POR_SECTOR:
-            dias = range(0, ventana_dias, PASO_POR_SECTOR[sector])
+        if sector in paso_por_sector:
+            dias = range(0, ventana_dias, paso_por_sector[sector])
         elif sector == "S04":
-            dias = DIAS_FIJOS_S04
+            dias = dias_fijos_s04
         else:
             dias = ()
         for atras in dias:
             fecha = (hoy - timedelta(days=atras)).isoformat()
-            mediciones[sector][fecha] = VALORES_FIJOS.get((sector, atras), round(rng.uniform(25, 75), 1))
+            mediciones[sector][fecha] = valores_fijos.get((sector, atras), round(rng.uniform(25, 75), 1))
     # Un registro anterior a la ventana: se informa al cargar y no se reescribe al guardar.
     mediciones["S01"][(hoy - timedelta(days=ventana_dias + 2)).isoformat()] = 47.2
     return mediciones

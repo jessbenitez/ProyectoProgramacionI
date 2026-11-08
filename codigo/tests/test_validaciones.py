@@ -5,50 +5,55 @@ import pytest
 
 import validaciones
 
-HOY = date(2026, 10, 14)
-SECTORES = {"S01": "Frutillas", "S02": "Frambuesas"}
+
+def datos_hoy():
+    return date(2026, 10, 14)
+
+
+def datos_sectores():
+    return {"S01": "Frutillas", "S02": "Frambuesas"}
 
 
 # --- fecha ---
 def test_fecha_valida():
-    assert validaciones.validar_fecha("2026-10-12", HOY, 28) == date(2026, 10, 12)
+    assert validaciones.validar_fecha("2026-10-12", datos_hoy(), 28) == date(2026, 10, 12)
 
 
 @pytest.mark.parametrize("fecha", ["2026-02-30", "2026-13-01", "12/10/2026", "2026-1-5", "", "abc", "2026-10-12\n"])
 def test_fecha_formato_o_calendario_invalido(fecha):
     with pytest.raises(ValueError):
-        validaciones.validar_fecha(fecha, HOY, 28)
+        validaciones.validar_fecha(fecha, datos_hoy(), 28)
 
 
 def test_fecha_mensaje_indica_formato_esperado():
     with pytest.raises(ValueError, match="AAAA-MM-DD"):
-        validaciones.validar_fecha("12/10/2026", HOY, 28)
+        validaciones.validar_fecha("12/10/2026", datos_hoy(), 28)
 
 
 def test_fecha_limites_de_la_ventana():
     # hoy y hoy menos 27 días se aceptan; hoy menos 28 días y mañana se rechazan
-    assert validaciones.validar_fecha("2026-10-14", HOY, 28) == HOY
-    assert validaciones.validar_fecha("2026-09-17", HOY, 28) == date(2026, 9, 17)
+    assert validaciones.validar_fecha("2026-10-14", datos_hoy(), 28) == datos_hoy()
+    assert validaciones.validar_fecha("2026-09-17", datos_hoy(), 28) == date(2026, 9, 17)
     with pytest.raises(ValueError):
-        validaciones.validar_fecha("2026-09-16", HOY, 28)
+        validaciones.validar_fecha("2026-09-16", datos_hoy(), 28)
     with pytest.raises(ValueError):
-        validaciones.validar_fecha("2026-10-15", HOY, 28)
+        validaciones.validar_fecha("2026-10-15", datos_hoy(), 28)
 
 
 # --- sector ---
 def test_sector_valido():
-    assert validaciones.validar_codigo_sector("S01", SECTORES) == "S01"
+    assert validaciones.validar_codigo_sector("S01", datos_sectores()) == "S01"
 
 
 @pytest.mark.parametrize("codigo", ["s01", "S1", "S001", "1", "", "S01 "])
 def test_sector_formato_invalido(codigo):
     with pytest.raises(ValueError, match="S##"):
-        validaciones.validar_codigo_sector(codigo, SECTORES)
+        validaciones.validar_codigo_sector(codigo, datos_sectores())
 
 
 def test_sector_con_formato_correcto_pero_inexistente():
     with pytest.raises(ValueError, match="inexistente"):
-        validaciones.validar_codigo_sector("S09", SECTORES)
+        validaciones.validar_codigo_sector("S09", datos_sectores())
 
 
 # --- humedad ---

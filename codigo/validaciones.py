@@ -39,3 +39,19 @@ def validar_usuario(usuario):
     if not re.fullmatch(r"[a-z0-9_]{3,20}", usuario):
         raise ValueError("Usuario inválido: se esperaban de 3 a 20 caracteres entre minúsculas, dígitos o guion bajo")
     return usuario
+
+def es_numero(valor):
+    return isinstance(valor, (int, float)) and not isinstance(valor, bool)
+
+
+def validar_limites(limites):
+    claves = ("critico_bajo", "ideal_bajo", "ideal_alto", "critico_alto")
+    for clave in claves:
+        if not es_numero(limites[clave]):
+            raise ValueError(f"configuracion.json: el límite '{clave}' debe ser un número")
+
+    cb, ib, ia, ca = (limites[clave] for clave in claves)
+    if not (0 <= cb <= ib < ia <= ca <= 100):
+        raise ValueError("configuracion.json: los límites deben cumplir "
+                         "0 <= critico_bajo <= ideal_bajo < ideal_alto <= critico_alto <= 100")
+    return limites

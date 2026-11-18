@@ -23,6 +23,8 @@ def cargar_configuracion(ruta):
             if clave not in config["archivos"]:
                 raise KeyError(f"configuracion.json: falta el archivo '{clave}'")
 
+        validaciones.validar_limites(config["limites"])
+
         codigos_sectores = list(config["sectores"].keys())
         if not codigos_sectores:
             raise ValueError("configuracion.json: debe haber al menos un sector")
